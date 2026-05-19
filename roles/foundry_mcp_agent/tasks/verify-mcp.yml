@@ -1,0 +1,34 @@
+---
+- name: foundry_mcp_agent | Probe MCP initialize endpoint
+  ansible.builtin.uri:
+    url: "{{ aap_mcp_server_url }}"
+    method: POST
+    validate_certs: "{{ foundry_validate_certs }}"
+    headers:
+      Authorization: "{{ aap_mcp_auth_header }}"
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+    body_format: json
+    body:
+      jsonrpc: "2.0"
+      id: 1
+      method: initialize
+      params:
+        protocolVersion: "2024-11-05"
+        capabilities: {}
+        clientInfo:
+          name: ansible-foundry-register
+          version: "1.0"
+    status_code: 200
+  register: foundry_mcp_agent_probe
+  changed_when: false
+
+- name: foundry_mcp_agent | Confirm MCP server responded to initialize
+  ansible.builtin.assert:
+    that:
+      - >-
+        'serverInfo' in (foundry_mcp_agent_probe.content | default('')) or
+        'protocolVersion' in (foundry_mcp_agent_probe.content | default(''))
+    fail_msg: >-
+      MCP at {{ aap_mcp_server_url }} did not return a valid initialize response.
+      Confirm aap_mcp_base_url and credentials, or run: ansible-playbook playbooks/site.yml --tags foundry_verify_mcp

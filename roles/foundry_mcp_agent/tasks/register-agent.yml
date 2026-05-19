@@ -1,0 +1,38 @@
+---
+- name: foundry_mcp_agent | Build MCP tool definitions for Foundry agent
+  ansible.builtin.set_fact:
+    foundry_mcp_tools:
+      - type: mcp
+        server_label: "{{ foundry_mcp_server_label }}"
+        server_url: "{{ aap_mcp_server_url }}"
+        require_approval: "{{ foundry_mcp_require_approval }}"
+        project_connection_id: "{{ foundry_mcp_connection_name }}"
+
+- name: foundry_mcp_agent | Create Foundry agent with unified MCP endpoint
+  ansible.builtin.uri:
+    url: "{{ foundry_project_endpoint }}/agents?api-version={{ foundry_agents_api_version }}"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ foundry_agent_token }}"
+      Content-Type: application/json
+    body_format: json
+    body:
+      name: "{{ foundry_agent_name }}"
+      description: Ansible Automation Platform agent via MCP
+      definition:
+        kind: prompt
+        model: "{{ foundry_model_deployment_name }}"
+        instructions: "{{ foundry_agent_instructions }}"
+        tools: "{{ foundry_mcp_tools }}"
+    status_code:
+      - 200
+      - 201
+      - 409
+  register: foundry_mcp_agent_create
+
+- name: foundry_mcp_agent | Note agent already exists
+  when: foundry_mcp_agent_create.status == 409
+  ansible.builtin.debug:
+    msg: >-
+      Agent '{{ foundry_agent_name }}' already exists (HTTP 409). Update it in the
+      Foundry portal or change foundry_agent_name.

@@ -1,0 +1,32 @@
+---
+foundry_model_deployment_name: gpt-4.1-mini
+foundry_mcp_connection_name: aap-mcp-bearer
+foundry_agent_name: aap-automation-agent
+foundry_mcp_server_label: ansible-aap
+foundry_mcp_require_approval: always
+foundry_connections_api_version: 2025-05-01-preview
+foundry_agents_api_version: v1
+foundry_agent_token: ""
+foundry_az_scope: https://ai.azure.com/.default
+
+foundry_verify_mcp_before_register: true
+foundry_register_agent: true
+foundry_validate_certs: false
+
+aap_user: admin
+aap_password: ""
+
+aap_mcp_base_url: https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
+aap_mcp_server_path: /mcp
+
+foundry_agent_instructions: >-
+  Use Ansible Automation Platform MCP tools for inventories, jobs, and platform
+  configuration. Request approval before write operations.
+
+foundry_mcp_toolsets:
+  - job_management
+  - inventory_management
+  - system_monitoring
+  - user_management
+  - security_compliance
+  - platform_configuration

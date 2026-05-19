@@ -1,0 +1,23 @@
+---
+# Copy to group_vars/all.yml (or use ansible-vault) — do not commit secrets.
+
+# Ansible MCP server (already deployed on AAP — set your URL)
+aap_mcp_base_url: https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
+aap_mcp_server_path: /mcp
+
+# AAP credentials for MCP (Basic auth; OAuth2 bearer tokens fail MCP validation)
+aap_user: admin
+aap_password: ""
+
+# Azure AI Foundry (playbooks/site.yml)
+foundry_project_endpoint: ""  # https://<resource>.services.ai.azure.com/api/projects/<project>
+foundry_model_deployment_name: gpt-4.1-mini
+foundry_mcp_connection_name: aap-mcp-bearer
+foundry_agent_name: aap-automation-agent
+foundry_mcp_server_label: ansible-aap
+foundry_mcp_require_approval: always
+foundry_verify_mcp_before_register: true
+foundry_register_agent: true
+foundry_validate_certs: false
+# Optional: set instead of running `az account get-access-token`
+# foundry_agent_token: ""

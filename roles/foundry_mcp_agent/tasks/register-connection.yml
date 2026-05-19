@@ -1,0 +1,26 @@
+---
+- name: foundry_mcp_agent | Create or update project connection for MCP Basic auth
+  ansible.builtin.uri:
+    url: >-
+      {{ foundry_project_endpoint }}/connections/{{ foundry_mcp_connection_name
+      }}?api-version={{ foundry_connections_api_version }}
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ foundry_agent_token }}"
+      Content-Type: application/json
+    body_format: json
+    body:
+      name: "{{ foundry_mcp_connection_name }}"
+      type: CustomKeys
+      credentials:
+        keys:
+          Authorization: "{{ aap_mcp_auth_header }}"
+    status_code:
+      - 200
+      - 201
+  register: foundry_mcp_agent_connection
+  no_log: true
+
+- name: foundry_mcp_agent | Record connection registration
+  ansible.builtin.set_fact:
+    foundry_mcp_connection_registered: true

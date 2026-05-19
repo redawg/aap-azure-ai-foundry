@@ -1,0 +1,6 @@
+.env
+creds.md
+group_vars/all.yml
+.venv/
+__pycache__/
+*.pyc

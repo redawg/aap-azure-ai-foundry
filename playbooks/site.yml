@@ -1,0 +1,36 @@
+---
+# Register an existing Ansible MCP server with Azure AI Foundry.
+#
+# Prerequisites:
+#   - MCP server running on AAP (set aap_mcp_base_url in group_vars/all.yml)
+#   - az login (or set foundry_agent_token)
+#
+# Usage:
+#   ansible-playbook playbooks/site.yml
+#
+# Tags:
+#   foundry_verify_mcp   — probe MCP /mcp only (skip Foundry registration)
+#   foundry_connection   — project connection only
+#   foundry_agent        — create agent (requires connection)
+#   foundry_mcp_agent    — full flow (default)
+
+- name: Configure Ansible MCP server in Azure AI Foundry
+  hosts: foundry
+  gather_facts: false
+
+  roles:
+    - role: foundry_mcp_agent
+      tags:
+        - foundry_mcp_agent
+
+  post_tasks:
+    - name: Summarize Foundry MCP registration
+      ansible.builtin.debug:
+        msg:
+          - "MCP server URL: {{ aap_mcp_server_url | default(aap_mcp_base_url ~ aap_mcp_server_path) }}"
+          - "Foundry connection: {{ foundry_mcp_connection_name }} (CustomKeys → Authorization: Basic …)"
+          - "Foundry agent: {{ foundry_agent_name }} (model: {{ foundry_model_deployment_name }})"
+          - "Test: https://ai.azure.com → your project → Playground → agent '{{ foundry_agent_name }}'"
+          - "Optional toolsets: {% for t in foundry_mcp_toolsets %}{{ aap_mcp_base_url }}/{{ t }}/mcp{% if not loop.last %}, {% endif %}{% endfor %}"
+      tags:
+        - foundry_mcp_agent

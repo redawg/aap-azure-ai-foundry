@@ -1,0 +1,40 @@
+---
+- name: foundry_mcp_agent | Validate configuration
+  ansible.builtin.include_tasks: validate.yml
+  tags:
+    - foundry_mcp_agent
+    - foundry_validate
+
+- name: foundry_mcp_agent | Build MCP Authorization header
+  ansible.builtin.set_fact:
+    aap_mcp_auth_header: "Basic {{ (aap_user ~ ':' ~ aap_password) | b64encode }}"
+    aap_mcp_server_url: "{{ aap_mcp_base_url }}{{ aap_mcp_server_path }}"
+  no_log: true
+  tags:
+    - foundry_mcp_agent
+
+- name: foundry_mcp_agent | Verify MCP server is reachable
+  ansible.builtin.include_tasks: verify-mcp.yml
+  when: foundry_verify_mcp_before_register | bool
+  tags:
+    - foundry_mcp_agent
+    - foundry_verify_mcp
+
+- name: foundry_mcp_agent | Authenticate to Azure AI Foundry
+  ansible.builtin.include_tasks: authenticate.yml
+  tags:
+    - foundry_mcp_agent
+    - foundry_authenticate
+
+- name: foundry_mcp_agent | Register MCP credentials in Foundry project connection
+  ansible.builtin.include_tasks: register-connection.yml
+  tags:
+    - foundry_mcp_agent
+    - foundry_connection
+
+- name: foundry_mcp_agent | Register Foundry agent with MCP tool
+  ansible.builtin.include_tasks: register-agent.yml
+  when: foundry_register_agent | bool
+  tags:
+    - foundry_mcp_agent
+    - foundry_agent
