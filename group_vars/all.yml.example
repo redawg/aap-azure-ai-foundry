@@ -11,7 +11,7 @@ aap_password: ""
 
 # Azure AI Foundry (playbooks/site.yml)
 foundry_project_endpoint: ""  # https://<resource>.services.ai.azure.com/api/projects/<project>
-foundry_model_deployment_name: gpt-4.1-mini
+foundry_model_deployment_name: claude-sonnet-4-5  # must match your Foundry deployment name
 foundry_mcp_connection_name: aap-mcp-bearer
 foundry_agent_name: aap-automation-agent
 foundry_mcp_server_label: ansible-aap
