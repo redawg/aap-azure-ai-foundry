@@ -7,13 +7,22 @@ This repo does **not** install MCP on AAP. Set `aap_mcp_base_url` to your existi
 ## Ansible
 
 ```bash
-cd /Users/cferman/azure-aap-mcp
 cp group_vars/all.yml.example group_vars/all.yml
-# Edit: aap_mcp_base_url, aap_password, foundry_project_endpoint
+# Edit: aap_password, foundry_project_endpoint (workshop example below)
 
+# Option A — device-code login (no az CLI required)
+python3 -m pip install --user azure-identity
+AAP_PASSWORD='…' ./scripts/register-foundry.sh
+
+# Option B — Azure CLI
+sudo dnf install -y azure-cli   # or: ./scripts/install-az.sh
 az login
 ansible-playbook playbooks/site.yml
 ```
+
+Workshop Foundry project endpoint (example):
+
+`https://foundry-wg2cd-1.services.ai.azure.com/api/projects/foundry-wg2cd-1-project`
 
 ### Tags
 
