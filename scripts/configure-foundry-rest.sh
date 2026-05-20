@@ -15,7 +15,7 @@ AGENT_TOKEN=$(az account get-access-token --scope "https://ai.azure.com/.default
 
 echo "Creating project connection ${MCP_PROJECT_CONNECTION_NAME}..."
 /usr/bin/curl -sS -X PUT \
-  "${FOUNDRY_PROJECT_ENDPOINT}/connections/${MCP_PROJECT_CONNECTION_NAME}?api-version=2025-05-01-preview" \
+  "${FOUNDRY_PROJECT_ENDPOINT}/connections/${MCP_PROJECT_CONNECTION_NAME}?api-version=v1" \
   -H "Authorization: Bearer ${AGENT_TOKEN}" \
   -H "Content-Type: application/json" \
   -d "$(cat <<EOF

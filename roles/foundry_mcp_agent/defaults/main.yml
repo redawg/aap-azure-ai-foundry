@@ -4,7 +4,7 @@ foundry_mcp_connection_name: aap-mcp-bearer
 foundry_agent_name: aap-automation-agent
 foundry_mcp_server_label: ansible-aap
 foundry_mcp_require_approval: always
-foundry_connections_api_version: 2025-05-01-preview
+foundry_connections_api_version: v1
 foundry_agents_api_version: v1
 foundry_agent_token: ""
 foundry_az_scope: https://ai.azure.com/.default

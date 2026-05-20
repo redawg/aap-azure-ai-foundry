@@ -31,7 +31,7 @@ CONNECTION_NAME = os.environ.get("MCP_PROJECT_CONNECTION_NAME", "aap-mcp-bearer"
 AGENT_NAME = os.environ.get("FOUNDRY_AGENT_NAME", "aap-automation-agent")
 MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT_NAME", "claude-sonnet-4-5")
 SCOPE = "https://ai.azure.com/.default"
-CONN_API = "2025-05-01-preview"
+CONN_API = "v1"
 AGENT_API = "v1"
 
 
