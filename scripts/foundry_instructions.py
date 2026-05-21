@@ -51,7 +51,7 @@ def build_agent_instructions(map_path: Path | None = None) -> str:
 When the user provides an Azure Monitor alert, Action Group payload, Log Analytics query result, or Foundry error:
 
 1. **Parse the alert** — extract rule name, severity, resource type/id, error text, and any `properties` / `essentials` fields ({fields}).
-2. **List templates** — call MCP tool `controller.job_templates_list` (job_management toolset) to fetch current job templates from AAP.
+2. **List templates** — call MCP tool `job_templates_list` on the AAP MCP server to fetch current job templates from AAP.
 3. **Recommend one template** — pick the best match using the mapping below AND template names/descriptions from AAP. Explain why in plain language.
 4. **Respond with**:
    - Recommended template **ID** and **name**
@@ -67,7 +67,7 @@ If no template fits, say so and suggest creating one; still list available templ
 
 ## MCP usage
 
-- Use MCP tools on `{os.environ.get('AAP_MCP_BASE_URL', 'https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io')}/mcp` or `/job_management/mcp`.
+- Use MCP tools on `{os.environ.get('AAP_MCP_BASE_URL', 'https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io')}/mcp` (Foundry agent is configured with this URL only).
 - Authentication is Gateway **Bearer** token via project connection `Authorization` header.
 - Read operations (list templates, jobs, inventories) do not need launch approval.
 - **Never** launch jobs or change platform state without user confirmation.
