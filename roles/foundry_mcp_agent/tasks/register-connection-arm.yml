@@ -27,5 +27,5 @@
     msg:
       - "ARM connection registered (secrets may not appear in GET responses)."
       - "In https://ai.azure.com → project {{ foundry_project }} → Connected resources → {{ foundry_mcp_connection_name }}"
-      - "Custom keys — key name: Authorization | key value: {{ aap_mcp_auth_header }}"
+      - "Custom keys — key name: Authorization | key value: Bearer <gateway-token> (mint via playbooks/create-gateway-token.yml)"
       - "Wrong: key name 'Value' with Bearer token (Foundry error: Failed to add header 'Value:')."

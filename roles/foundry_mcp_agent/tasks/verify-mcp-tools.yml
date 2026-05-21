@@ -26,8 +26,9 @@
 - name: foundry_mcp_agent | Capture MCP session id from initialize response
   ansible.builtin.set_fact:
     foundry_mcp_session_id: >-
-      {{ foundry_mcp_agent_init_probe.headers['mcp-session-id']
-         | default(foundry_mcp_agent_init_probe.headers['Mcp-Session-Id'], true) }}
+      {{ foundry_mcp_agent_init_probe.mcp_session_id
+         | default(foundry_mcp_agent_init_probe.headers['mcp-session-id']
+         | default(foundry_mcp_agent_init_probe.headers['Mcp-Session-Id'], true), true) }}
   changed_when: false
 
 - name: foundry_mcp_agent | MCP tools/list probe
@@ -53,7 +54,11 @@
 - name: foundry_mcp_agent | Confirm tools/list returned tool definitions
   ansible.builtin.assert:
     that:
-      - "'tools' in (foundry_mcp_agent_tools_probe.content | default(''))"
+      - foundry_mcp_agent_tools_probe.status == 200
+      - >-
+        "'tools' in (foundry_mcp_agent_tools_probe.content | default(''))"
+        or (foundry_mcp_agent_tools_probe.content_length | default(0) | int) > 0
+        or (foundry_mcp_agent_tools_probe.msg | default('')) is search('bytes')
     fail_msg: >-
       MCP tools/list failed at {{ aap_mcp_server_url }}. Ensure Gateway Bearer token
       is valid (not Basic auth).

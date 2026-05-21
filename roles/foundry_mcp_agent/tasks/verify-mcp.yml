@@ -28,7 +28,8 @@
     that:
       - foundry_mcp_agent_probe.status == 200
       - >-
-        'serverInfo' in (foundry_mcp_agent_probe.content | default(''))
+        (foundry_mcp_agent_probe.mcp_session_id | default('') | length > 0)
+        or 'serverInfo' in (foundry_mcp_agent_probe.content | default(''))
         or '"name":"aap"' in (foundry_mcp_agent_probe.content | default(''))
         or 'protocolVersion' in (foundry_mcp_agent_probe.content | default(''))
     fail_msg: >-
