@@ -1,0 +1,12 @@
+---
+# Full reset: cleanup Foundry registration, then register MCP + agent.
+#
+#   ansible-playbook playbooks/redeploy.yml -e foundry_delete_extra_projects=true
+#
+- name: Redeploy Foundry AAP MCP integration
+  ansible.builtin.import_playbook: cleanup-foundry.yml
+  vars:
+    foundry_delete_extra_projects: true
+
+- name: Register Foundry MCP and agent
+  ansible.builtin.import_playbook: site.yml

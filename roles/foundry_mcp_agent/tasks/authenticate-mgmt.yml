@@ -1,0 +1,23 @@
+---
+- name: foundry_mcp_agent | Obtain Azure management token via Azure CLI
+  when: foundry_mgmt_token | length == 0
+  ansible.builtin.command:
+    cmd: >-
+      az account get-access-token
+      --scope {{ foundry_mgmt_az_scope }}
+      --query accessToken -o tsv
+  register: foundry_mcp_agent_mgmt_az_token
+  changed_when: false
+  failed_when: foundry_mcp_agent_mgmt_az_token.rc != 0
+
+- name: foundry_mcp_agent | Set management bearer token
+  when: foundry_mgmt_token | length == 0
+  ansible.builtin.set_fact:
+    foundry_mgmt_token: "{{ foundry_mcp_agent_mgmt_az_token.stdout | trim }}"
+  no_log: true
+
+- name: foundry_mcp_agent | Ensure management token is available
+  ansible.builtin.assert:
+    that:
+      - foundry_mgmt_token | length > 0
+    fail_msg: Run `az login` or set foundry_mgmt_token in group_vars/all.yml.

@@ -8,7 +8,8 @@
       - aap_password | length > 0
     fail_msg: >-
       Copy group_vars/all.yml.example to group_vars/all.yml and set
-      foundry_project_endpoint, aap_password, and aap_mcp_base_url.
+      foundry_project_endpoint (or foundry_account + foundry_project), aap_password,
+      and aap_mcp_base_url.
 
 - name: foundry_mcp_agent | Ensure model is set when creating an agent
   when: foundry_register_agent | bool

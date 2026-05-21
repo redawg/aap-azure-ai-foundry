@@ -1,0 +1,34 @@
+---
+- name: aap_workshop_verify | Require OpenShift CLI
+  ansible.builtin.command:
+    cmd: oc version --client
+  register: aap_workshop_verify_oc_client
+  changed_when: false
+  failed_when: aap_workshop_verify_oc_client.rc != 0
+
+- name: aap_workshop_verify | Log in to OpenShift cluster
+  ansible.builtin.command:
+    cmd: >-
+      oc login {{ ocp_api_url }} --token={{ ocp_token }}
+      --insecure-skip-tls-verify=true
+  register: aap_workshop_verify_oc_login
+  changed_when: false
+  no_log: true
+
+- name: aap_workshop_verify | List AnsibleMCPServer CRs
+  ansible.builtin.command:
+    cmd: oc get ansiblemcpservers -A
+  register: aap_workshop_verify_mcp_crs
+  changed_when: false
+
+- name: aap_workshop_verify | List MCP routes in AAP namespace
+  ansible.builtin.command:
+    cmd: oc get routes -n {{ ocp_namespace }}
+  register: aap_workshop_verify_mcp_routes
+  changed_when: false
+
+- name: aap_workshop_verify | Show OpenShift MCP resources
+  ansible.builtin.debug:
+    var:
+      - aap_workshop_verify_mcp_crs.stdout_lines
+      - aap_workshop_verify_mcp_routes.stdout_lines

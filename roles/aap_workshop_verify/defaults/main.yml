@@ -1,0 +1,13 @@
+---
+aap_user: admin
+aap_password: ""
+aap_base_url: https://aap-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
+aap_mcp_base_url: https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
+aap_mcp_server_path: /mcp
+foundry_validate_certs: false
+
+ocp_api_url: https://api.cluster-wg2cd-2.dynamic2.redhatworkshops.io:6443
+ocp_token: ""
+ocp_namespace: aap
+
+aap_gateway_token: ""

@@ -1,0 +1,23 @@
+---
+- name: aap_controller | List recent unified jobs
+  ansible.builtin.uri:
+    url: >-
+      {{ aap_base_url }}/api/controller/v2/unified_jobs/?order_by=-finished&page_size={{ aap_recent_jobs_limit }}
+    method: GET
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    return_content: true
+    status_code: 200
+  register: aap_controller_recent_jobs
+  changed_when: false
+
+- name: aap_controller | Show recent jobs
+  ansible.builtin.debug:
+    msg: >-
+      [{{ item.id }}] {{ item.name }} — {{ item.status }}
+      (finished: {{ item.finished | default('n/a') }})
+  loop: "{{ aap_controller_recent_jobs.json.results | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"

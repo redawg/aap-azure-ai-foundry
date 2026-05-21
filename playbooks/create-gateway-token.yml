@@ -1,0 +1,23 @@
+---
+# Create and display an AAP Gateway API token (for MCP Bearer auth).
+#
+#   ansible-playbook playbooks/create-gateway-token.yml
+#
+- name: Create AAP Gateway token
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+
+  tasks:
+    - name: Create Gateway token
+      ansible.builtin.include_role:
+        name: foundry_mcp_agent
+        tasks_from: gateway-token.yml
+
+    - name: Show Bearer value for Foundry portal
+      ansible.builtin.debug:
+        msg:
+          - "Foundry connection Custom key:"
+          - "  Name: Authorization"
+          - "  Value: Bearer {{ aap_gateway_token }}"

@@ -1,0 +1,27 @@
+---
+- name: foundry_mcp_agent | Install Python deps for agent instruction publisher
+  ansible.builtin.pip:
+    name:
+      - pyyaml
+      - azure-ai-projects
+      - azure-identity
+    extra_args: --user
+  changed_when: false
+  failed_when: false
+
+- name: foundry_mcp_agent | Publish new agent version with Azure alert instructions
+  ansible.builtin.command:
+    cmd: python3 {{ repo_root }}/scripts/update-foundry-agent-instructions.py
+  environment:
+    FOUNDRY_PROJECT_ENDPOINT: "{{ foundry_project_endpoint }}"
+    FOUNDRY_AGENT_NAME: "{{ foundry_agent_name }}"
+    FOUNDRY_MODEL_DEPLOYMENT_NAME: "{{ foundry_model_deployment_name }}"
+    AAP_MCP_BASE_URL: "{{ aap_mcp_base_url }}"
+    MCP_PROJECT_CONNECTION_NAME: "{{ foundry_mcp_connection_name }}"
+    FOUNDRY_MCP_SERVER_LABEL: "{{ foundry_mcp_server_label }}"
+  register: foundry_mcp_agent_update_instructions
+  changed_when: "'OK:' in (foundry_mcp_agent_update_instructions.stdout | default(''))"
+
+- name: foundry_mcp_agent | Show instruction update output
+  ansible.builtin.debug:
+    var: foundry_mcp_agent_update_instructions.stdout_lines

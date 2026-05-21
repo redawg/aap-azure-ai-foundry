@@ -1,0 +1,14 @@
+---
+# List AAP Controller job templates.
+#
+#   ansible-playbook playbooks/list-job-templates.yml
+#
+- name: List AAP job templates
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+    aap_controller_action: list-job-templates
+
+  roles:
+    - role: aap_controller

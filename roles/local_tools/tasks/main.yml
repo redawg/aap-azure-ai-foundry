@@ -1,0 +1,19 @@
+---
+- name: local_tools | Install OpenShift CLI (oc)
+  when: install_oc | bool
+  ansible.builtin.include_tasks: install-oc.yml
+
+- name: local_tools | Check Azure CLI
+  when: install_az | bool
+  ansible.builtin.command:
+    cmd: az version
+  register: local_tools_az_version
+  changed_when: false
+  failed_when: false
+
+- name: local_tools | Azure CLI install hint
+  when: install_az | bool and local_tools_az_version.rc != 0
+  ansible.builtin.fail:
+    msg: >-
+      Azure CLI not found. On Fedora: sudo dnf install azure-cli
+      or see https://learn.microsoft.com/en-us/cli/azure/install-azure-cli

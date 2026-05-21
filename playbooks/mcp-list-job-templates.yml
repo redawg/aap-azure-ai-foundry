@@ -1,0 +1,20 @@
+---
+# List job templates via AAP MCP (requires Gateway Bearer token).
+#
+#   ansible-playbook playbooks/mcp-list-job-templates.yml
+#
+- name: List job templates via MCP
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+    aap_controller_action: mcp-list-job-templates
+
+  pre_tasks:
+    - name: Create Gateway token for MCP
+      ansible.builtin.include_role:
+        name: foundry_mcp_agent
+        tasks_from: gateway-token.yml
+
+  roles:
+    - role: aap_controller

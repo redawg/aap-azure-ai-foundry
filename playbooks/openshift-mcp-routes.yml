@@ -1,0 +1,16 @@
+---
+# Show OpenShift AnsibleMCPServer CRs and routes (requires oc and ocp_token).
+#
+#   ansible-playbook playbooks/openshift-mcp-routes.yml -e ocp_token=sha256~...
+#
+- name: OpenShift MCP routes
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+
+  tasks:
+    - name: OpenShift MCP inspection
+      ansible.builtin.include_role:
+        name: aap_workshop_verify
+        tasks_from: openshift-mcp-routes.yml

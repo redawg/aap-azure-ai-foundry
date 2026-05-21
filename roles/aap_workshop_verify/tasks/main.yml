@@ -1,0 +1,30 @@
+---
+- name: aap_workshop_verify | Validate credentials
+  ansible.builtin.assert:
+    that:
+      - aap_password | length > 0
+    fail_msg: Set aap_password in group_vars/all.yml.
+
+- name: aap_workshop_verify | Gateway token for MCP checks
+  ansible.builtin.include_role:
+    name: foundry_mcp_agent
+    tasks_from: gateway-token.yml
+  vars:
+    aap_mcp_server_url: "{{ aap_mcp_base_url }}{{ aap_mcp_server_path }}"
+
+- name: aap_workshop_verify | Check AAP Controller API
+  ansible.builtin.include_tasks: verify-controller-api.yml
+
+- name: aap_workshop_verify | Check MCP initialize
+  ansible.builtin.include_tasks: verify-mcp-initialize.yml
+
+- name: aap_workshop_verify | Check MCP tools/list
+  ansible.builtin.include_role:
+    name: foundry_mcp_agent
+    tasks_from: verify-mcp-tools.yml
+  vars:
+    aap_mcp_server_url: "{{ aap_mcp_base_url }}{{ aap_mcp_server_path }}"
+
+- name: aap_workshop_verify | OpenShift MCP routes (when token set)
+  ansible.builtin.include_tasks: openshift-mcp-routes.yml
+  when: ocp_token | length > 0

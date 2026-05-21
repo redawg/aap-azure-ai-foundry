@@ -1,0 +1,40 @@
+---
+- name: local_tools | Create install directory
+  ansible.builtin.file:
+    path: "{{ local_tools_install_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: local_tools | Download OpenShift client tarball
+  ansible.builtin.get_url:
+    url: "{{ oc_download_url }}"
+    dest: /tmp/openshift-client-linux.tar.gz
+    mode: "0644"
+  register: local_tools_oc_download
+
+- name: local_tools | Extract oc and kubectl
+  ansible.builtin.unarchive:
+    src: /tmp/openshift-client-linux.tar.gz
+    dest: /tmp
+    remote_src: true
+    creates: /tmp/oc
+
+- name: local_tools | Install oc and kubectl binaries
+  ansible.builtin.copy:
+    src: "/tmp/{{ item }}"
+    dest: "{{ local_tools_install_dir }}/{{ item }}"
+    mode: "0755"
+    remote_src: true
+  loop:
+    - oc
+    - kubectl
+
+- name: local_tools | Show installed oc version
+  ansible.builtin.command:
+    cmd: "{{ local_tools_install_dir }}/oc version --client"
+  register: local_tools_oc_version
+  changed_when: false
+
+- name: local_tools | oc install complete
+  ansible.builtin.debug:
+    var: local_tools_oc_version.stdout_lines

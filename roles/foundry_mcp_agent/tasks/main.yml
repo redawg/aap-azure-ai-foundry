@@ -5,29 +5,56 @@
     - foundry_mcp_agent
     - foundry_validate
 
-- name: foundry_mcp_agent | Build MCP Authorization header
+- name: foundry_mcp_agent | Derive Foundry project endpoint when omitted
+  when: foundry_project_endpoint | length == 0
   ansible.builtin.set_fact:
-    aap_mcp_auth_header: "Basic {{ (aap_user ~ ':' ~ aap_password) | b64encode }}"
-    aap_mcp_server_url: "{{ aap_mcp_base_url }}{{ aap_mcp_server_path }}"
-  no_log: true
+    foundry_project_endpoint: >-
+      https://{{ foundry_account }}.services.ai.azure.com/api/projects/{{ foundry_project }}
   tags:
     - foundry_mcp_agent
 
-- name: foundry_mcp_agent | Verify MCP server is reachable
+- name: foundry_mcp_agent | Set MCP server URL
+  ansible.builtin.set_fact:
+    aap_mcp_server_url: "{{ aap_mcp_base_url }}{{ aap_mcp_server_path }}"
+  tags:
+    - foundry_mcp_agent
+
+- name: foundry_mcp_agent | Create Gateway token and Bearer header
+  ansible.builtin.include_tasks: gateway-token.yml
+  tags:
+    - foundry_mcp_agent
+    - foundry_gateway_token
+
+- name: foundry_mcp_agent | Verify MCP initialize endpoint
   ansible.builtin.include_tasks: verify-mcp.yml
   when: foundry_verify_mcp_before_register | bool
   tags:
     - foundry_mcp_agent
     - foundry_verify_mcp
 
-- name: foundry_mcp_agent | Authenticate to Azure AI Foundry
+- name: foundry_mcp_agent | Verify MCP tools/list (Bearer session)
+  ansible.builtin.include_tasks: verify-mcp-tools.yml
+  when: foundry_verify_mcp_tools_list | bool
+  tags:
+    - foundry_mcp_agent
+    - foundry_verify_mcp
+
+- name: foundry_mcp_agent | Authenticate to Foundry data plane (Azure CLI)
   ansible.builtin.include_tasks: authenticate.yml
   tags:
     - foundry_mcp_agent
     - foundry_authenticate
 
-- name: foundry_mcp_agent | Register MCP credentials in Foundry project connection
-  ansible.builtin.include_tasks: register-connection.yml
+- name: foundry_mcp_agent | Authenticate to Azure management plane
+  ansible.builtin.include_tasks: authenticate-mgmt.yml
+  when: foundry_register_connection_arm | bool or foundry_delete_extra_projects | bool
+  tags:
+    - foundry_mcp_agent
+    - foundry_authenticate
+
+- name: foundry_mcp_agent | Register MCP connection (ARM CustomKeys)
+  ansible.builtin.include_tasks: register-connection-arm.yml
+  when: foundry_register_connection_arm | bool
   tags:
     - foundry_mcp_agent
     - foundry_connection

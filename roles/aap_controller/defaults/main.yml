@@ -1,0 +1,11 @@
+---
+aap_user: admin
+aap_password: ""
+aap_base_url: https://aap-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
+foundry_validate_certs: false
+
+aap_job_templates_page_size: 200
+aap_recent_jobs_limit: 10
+aap_job_template_search: ""
+aap_launch_job_template_id: ""
+aap_launch_job_template_name: ""

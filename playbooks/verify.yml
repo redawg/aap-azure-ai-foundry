@@ -1,0 +1,17 @@
+---
+# Verify workshop AAP Controller, MCP (Bearer), and optional OpenShift MCP routes.
+#
+#   ansible-playbook playbooks/verify.yml
+#   ansible-playbook playbooks/verify.yml -e ocp_token=sha256~...
+#
+- name: Verify workshop AAP and MCP connectivity
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+
+  roles:
+    - role: aap_workshop_verify
+      tags:
+        - verify
+        - aap_workshop_verify

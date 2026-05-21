@@ -1,28 +1,45 @@
 ---
-foundry_model_deployment_name: claude-sonnet-4-5
+foundry_model_deployment_name: gpt-4o
 foundry_mcp_connection_name: aap-mcp-bearer
 foundry_agent_name: aap-automation-agent
 foundry_mcp_server_label: ansible-aap
 foundry_mcp_require_approval: always
 foundry_connections_api_version: v1
 foundry_agents_api_version: v1
+foundry_arm_connection_api_version: "2025-06-01"
 foundry_agent_token: ""
+foundry_mgmt_token: ""
 foundry_az_scope: https://ai.azure.com/.default
+foundry_mgmt_az_scope: https://management.azure.com/.default
+
+foundry_account: foundry-wg2cd-1
+foundry_project: foundry-wg2cd-1-project
+foundry_rg: openenv-wg2cd-1
+foundry_sub: 9dc2c3d2-35a8-4370-8997-b56a57b5778d
+foundry_project_endpoint: ""
 
 foundry_verify_mcp_before_register: true
+foundry_verify_mcp_tools_list: true
 foundry_register_agent: true
+foundry_register_connection_arm: true
 foundry_validate_certs: false
+foundry_delete_extra_projects: false
+foundry_extra_projects_to_delete:
+  - wg2cd-mcp
+  - wg2cd-project
 
 aap_user: admin
 aap_password: ""
+aap_base_url: https://aap-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
+aap_gateway_token: ""
+aap_token_description: foundry-mcp
 
 aap_mcp_base_url: https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
 aap_mcp_server_path: /mcp
 
-# Full text from scripts/foundry_instructions.py (requires PyYAML on controller)
 foundry_agent_instructions: >-
-  {{ lookup('pipe', 'python3 ' + playbook_dir + '/../scripts/foundry_instructions.py') }}
-foundry_alert_template_map_path: "{{ playbook_dir }}/../config/azure_alert_template_map.yml"
+  {{ lookup('pipe', 'python3 ' + repo_root + '/scripts/foundry_instructions.py') }}
+foundry_alert_template_map_path: "{{ repo_root }}/config/azure_alert_template_map.yml"
 
 foundry_mcp_toolsets:
   - job_management

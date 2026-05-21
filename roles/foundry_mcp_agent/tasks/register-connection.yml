@@ -1,4 +1,5 @@
 ---
+# Deprecated: data-plane PUT does not persist secrets. Use register-connection-arm.yml.
 - name: foundry_mcp_agent | Create or update project connection for MCP Basic auth
   ansible.builtin.uri:
     url: >-

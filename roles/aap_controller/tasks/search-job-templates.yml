@@ -1,0 +1,21 @@
+---
+- name: aap_controller | Search job templates
+  ansible.builtin.uri:
+    url: >-
+      {{ aap_base_url }}/api/controller/v2/job_templates/?search={{ aap_job_template_search | urlencode }}&page_size=20
+    method: GET
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    return_content: true
+    status_code: 200
+  register: aap_controller_search_templates
+  changed_when: false
+
+- name: aap_controller | Show matching templates
+  ansible.builtin.debug:
+    msg: "[{{ item.id }}] {{ item.name }}"
+  loop: "{{ aap_controller_search_templates.json.results }}"
+  loop_control:
+    label: "{{ item.name }}"

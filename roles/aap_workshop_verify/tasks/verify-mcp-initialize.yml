@@ -1,0 +1,34 @@
+---
+- name: aap_workshop_verify | MCP initialize
+  ansible.builtin.uri:
+    url: "{{ aap_mcp_base_url }}{{ aap_mcp_server_path }}"
+    method: POST
+    validate_certs: "{{ foundry_validate_certs }}"
+    headers:
+      Authorization: "{{ aap_mcp_auth_header }}"
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+    body_format: json
+    body:
+      jsonrpc: "2.0"
+      id: 1
+      method: initialize
+      params:
+        protocolVersion: "2024-11-05"
+        capabilities: {}
+        clientInfo:
+          name: ansible-workshop-verify
+          version: "1.0"
+    status_code: 200
+  register: aap_workshop_verify_mcp_init
+  changed_when: false
+
+- name: aap_workshop_verify | MCP initialize OK
+  ansible.builtin.assert:
+    that:
+      - "'serverInfo' in (aap_workshop_verify_mcp_init.content | default(''))"
+    fail_msg: MCP initialize did not return serverInfo at {{ aap_mcp_base_url }}{{ aap_mcp_server_path }}
+
+- name: aap_workshop_verify | Show MCP server info
+  ansible.builtin.debug:
+    msg: "MCP OK — response includes serverInfo (check content for aap version)"

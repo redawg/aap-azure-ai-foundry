@@ -1,0 +1,14 @@
+---
+# List recent AAP unified jobs.
+#
+#   ansible-playbook playbooks/list-recent-jobs.yml
+#
+- name: List recent AAP jobs
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+    aap_controller_action: list-recent-jobs
+
+  roles:
+    - role: aap_controller

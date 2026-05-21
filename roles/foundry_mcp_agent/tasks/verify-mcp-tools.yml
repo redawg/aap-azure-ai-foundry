@@ -1,0 +1,59 @@
+---
+- name: foundry_mcp_agent | MCP initialize (Bearer) for tools/list probe
+  ansible.builtin.uri:
+    url: "{{ aap_mcp_server_url }}"
+    method: POST
+    validate_certs: "{{ foundry_validate_certs }}"
+    headers:
+      Authorization: "{{ aap_mcp_auth_header }}"
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+    body_format: json
+    body:
+      jsonrpc: "2.0"
+      id: 1
+      method: initialize
+      params:
+        protocolVersion: "2024-11-05"
+        capabilities: {}
+        clientInfo:
+          name: ansible-foundry-verify
+          version: "1.0"
+    status_code: 200
+  register: foundry_mcp_agent_init_probe
+  changed_when: false
+
+- name: foundry_mcp_agent | Capture MCP session id from initialize response
+  ansible.builtin.set_fact:
+    foundry_mcp_session_id: >-
+      {{ foundry_mcp_agent_init_probe.headers['mcp-session-id']
+         | default(foundry_mcp_agent_init_probe.headers['Mcp-Session-Id'], true) }}
+  changed_when: false
+
+- name: foundry_mcp_agent | MCP tools/list probe
+  ansible.builtin.uri:
+    url: "{{ aap_mcp_server_url }}"
+    method: POST
+    validate_certs: "{{ foundry_validate_certs }}"
+    headers:
+      Authorization: "{{ aap_mcp_auth_header }}"
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+      Mcp-Session-Id: "{{ foundry_mcp_session_id }}"
+    body_format: json
+    body:
+      jsonrpc: "2.0"
+      id: 2
+      method: tools/list
+      params: {}
+    status_code: 200
+  register: foundry_mcp_agent_tools_probe
+  changed_when: false
+
+- name: foundry_mcp_agent | Confirm tools/list returned tool definitions
+  ansible.builtin.assert:
+    that:
+      - "'tools' in (foundry_mcp_agent_tools_probe.content | default(''))"
+    fail_msg: >-
+      MCP tools/list failed at {{ aap_mcp_server_url }}. Ensure Gateway Bearer token
+      is valid (not Basic auth).

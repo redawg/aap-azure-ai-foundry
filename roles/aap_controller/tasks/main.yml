@@ -1,0 +1,11 @@
+---
+- name: aap_controller | Validate credentials
+  ansible.builtin.assert:
+    that:
+      - aap_user | length > 0
+      - aap_password | length > 0
+      - aap_base_url | length > 0
+    fail_msg: Set aap_user and aap_password in group_vars/all.yml.
+
+- name: aap_controller | Include requested operation
+  ansible.builtin.include_tasks: "{{ aap_controller_action }}.yml"

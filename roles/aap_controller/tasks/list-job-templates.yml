@@ -1,0 +1,23 @@
+---
+- name: aap_controller | List job templates
+  ansible.builtin.uri:
+    url: "{{ aap_base_url }}/api/controller/v2/job_templates/?page_size={{ aap_job_templates_page_size }}"
+    method: GET
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    body_format: json
+    return_content: true
+    status_code: 200
+  register: aap_controller_job_templates
+  changed_when: false
+
+- name: aap_controller | Show job templates
+  ansible.builtin.debug:
+    msg: >-
+      [{{ item.id }}] {{ item.name }}
+      (org: {{ (item.summary_fields.organization.name | default('-')) }})
+  loop: "{{ aap_controller_job_templates.json.results }}"
+  loop_control:
+    label: "{{ item.name }}"

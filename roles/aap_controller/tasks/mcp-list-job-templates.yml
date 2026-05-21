@@ -1,0 +1,15 @@
+---
+- name: aap_controller | List job templates via MCP (Python client)
+  ansible.builtin.command:
+    cmd: python3 {{ repo_root }}/scripts/mcp-list-job-templates.py
+  environment:
+    AAP_USER: "{{ aap_user }}"
+    AAP_PASSWORD: "{{ aap_password }}"
+    MCP_BASE: "{{ aap_mcp_base_url }}"
+    AAP_GATEWAY_TOKEN: "{{ aap_gateway_token }}"
+  register: aap_controller_mcp_templates
+  changed_when: false
+
+- name: aap_controller | Show MCP listing output
+  ansible.builtin.debug:
+    var: aap_controller_mcp_templates.stdout_lines

@@ -1,0 +1,39 @@
+---
+- name: foundry_mcp_agent | Create AAP Gateway API token for MCP Bearer auth
+  when: aap_gateway_token | length == 0
+  ansible.builtin.uri:
+    url: "{{ aap_base_url }}/api/gateway/v1/tokens/"
+    method: POST
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    headers:
+      Content-Type: application/json
+    body_format: json
+    body:
+      description: "{{ aap_token_description }}"
+      application: ""
+      scope: write
+    status_code: 201
+  register: foundry_mcp_agent_gateway_token_resp
+  no_log: true
+
+- name: foundry_mcp_agent | Set Gateway token from API response
+  when: aap_gateway_token | length == 0
+  ansible.builtin.set_fact:
+    aap_gateway_token: "{{ foundry_mcp_agent_gateway_token_resp.json.token }}"
+  no_log: true
+
+- name: foundry_mcp_agent | Ensure Gateway token is available
+  ansible.builtin.assert:
+    that:
+      - aap_gateway_token | length > 0
+    fail_msg: >-
+      Could not obtain AAP Gateway token. Set aap_gateway_token in group_vars/all.yml
+      or verify aap_base_url, aap_user, and aap_password.
+
+- name: foundry_mcp_agent | Build MCP Authorization Bearer header
+  ansible.builtin.set_fact:
+    aap_mcp_auth_header: "Bearer {{ aap_gateway_token }}"
+  no_log: true

@@ -1,0 +1,14 @@
+---
+# Search job templates by name fragment.
+#
+#   ansible-playbook playbooks/search-job-templates.yml -e aap_job_template_search=plex
+#
+- name: Search AAP job templates
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+    aap_controller_action: search-job-templates
+
+  roles:
+    - role: aap_controller

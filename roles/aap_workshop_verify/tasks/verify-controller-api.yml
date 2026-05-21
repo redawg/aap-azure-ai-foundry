@@ -1,0 +1,19 @@
+---
+- name: aap_workshop_verify | GET AAP config (Controller API)
+  ansible.builtin.uri:
+    url: "{{ aap_base_url }}/api/controller/v2/config/"
+    method: GET
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    return_content: true
+    status_code: 200
+  register: aap_workshop_verify_config
+  changed_when: false
+
+- name: aap_workshop_verify | Controller API healthy
+  ansible.builtin.debug:
+    msg: >-
+      AAP Controller OK — version {{ aap_workshop_verify_config.json.version | default('?') }},
+      license {{ aap_workshop_verify_config.json.license_info.license_type | default('?') }}

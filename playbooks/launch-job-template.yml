@@ -1,0 +1,14 @@
+---
+# Launch an AAP job template by ID.
+#
+#   ansible-playbook playbooks/launch-job-template.yml -e aap_launch_job_template_id=13
+#
+- name: Launch AAP job template
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+    aap_controller_action: launch-job-template
+
+  roles:
+    - role: aap_controller

@@ -1,0 +1,32 @@
+---
+# Publish a new agent version with Azure alert → template mapping instructions.
+#
+#   ansible-playbook playbooks/update-agent-instructions.yml
+#
+- name: Update Foundry agent instructions
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+    foundry_register_agent: false
+    foundry_register_connection_arm: false
+    foundry_verify_mcp_before_register: false
+    foundry_verify_mcp_tools_list: false
+
+  pre_tasks:
+    - name: Derive Foundry project endpoint when omitted
+      when: foundry_project_endpoint | length == 0
+      ansible.builtin.set_fact:
+        foundry_project_endpoint: >-
+          https://{{ foundry_account }}.services.ai.azure.com/api/projects/{{ foundry_project }}
+
+  tasks:
+    - name: Authenticate to Foundry
+      ansible.builtin.include_role:
+        name: foundry_mcp_agent
+        tasks_from: authenticate.yml
+
+    - name: Publish agent instructions
+      ansible.builtin.include_role:
+        name: foundry_mcp_agent
+        tasks_from: update-agent-instructions.yml

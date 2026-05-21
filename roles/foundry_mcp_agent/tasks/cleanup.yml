@@ -1,0 +1,60 @@
+---
+- name: foundry_mcp_agent | List Foundry agents in project
+  ansible.builtin.uri:
+    url: "{{ foundry_project_endpoint }}/agents?api-version={{ foundry_agents_api_version }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ foundry_agent_token }}"
+    return_content: true
+    status_code: 200
+  register: foundry_mcp_agent_agents_list
+  changed_when: false
+
+- name: foundry_mcp_agent | Delete each Foundry agent
+  ansible.builtin.uri:
+    url: "{{ foundry_project_endpoint }}/agents/{{ item }}?api-version={{ foundry_agents_api_version }}"
+    method: DELETE
+    headers:
+      Authorization: "Bearer {{ foundry_agent_token }}"
+    status_code:
+      - 200
+      - 204
+      - 404
+  loop: >-
+    {{
+      (
+        foundry_mcp_agent_agents_list.json.data
+        | default(foundry_mcp_agent_agents_list.json.value, true)
+        | default([], true)
+      ) | map(attribute='name') | list
+    }}
+  register: foundry_mcp_agent_agent_delete
+  changed_when: foundry_mcp_agent_agent_delete.status in [200, 204]
+
+- name: foundry_mcp_agent | Delete MCP project connection (ARM)
+  ansible.builtin.uri:
+    url: >-
+      https://management.azure.com/subscriptions/{{ foundry_sub }}/resourceGroups/{{ foundry_rg }}/providers/Microsoft.CognitiveServices/accounts/{{ foundry_account }}/projects/{{ foundry_project }}/connections/{{ foundry_mcp_connection_name }}?api-version={{ foundry_arm_connection_api_version }}
+    method: DELETE
+    headers:
+      Authorization: "Bearer {{ foundry_mgmt_token }}"
+    status_code:
+      - 200
+      - 204
+      - 404
+  register: foundry_mcp_agent_conn_delete
+
+- name: foundry_mcp_agent | Delete extra ARM Foundry projects
+  when: foundry_delete_extra_projects | bool
+  ansible.builtin.uri:
+    url: >-
+      https://management.azure.com/subscriptions/{{ foundry_sub }}/resourceGroups/{{ foundry_rg }}/providers/Microsoft.CognitiveServices/accounts/{{ foundry_account }}/projects/{{ item }}?api-version={{ foundry_arm_connection_api_version }}
+    method: DELETE
+    headers:
+      Authorization: "Bearer {{ foundry_mgmt_token }}"
+    status_code:
+      - 200
+      - 204
+      - 404
+  loop: "{{ foundry_extra_projects_to_delete }}"
+  register: foundry_mcp_agent_extra_project_delete

@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 USER = os.environ.get("AAP_USER", "admin")
 PASSWORD = os.environ.get("AAP_PASSWORD")
+GATEWAY_TOKEN = os.environ.get("AAP_GATEWAY_TOKEN", "").strip()
 MCP_BASE = os.environ.get(
     "MCP_BASE",
     "https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io",
@@ -48,7 +49,10 @@ class McpClient:
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
         self.conn = HTTPSConnection(self.host, port, context=ctx, timeout=90)
-        self.auth = base64.b64encode(f"{USER}:{PASSWORD}".encode()).decode()
+        if GATEWAY_TOKEN:
+            self.auth_header = f"Bearer {GATEWAY_TOKEN}"
+        else:
+            self.auth_header = f"Basic {base64.b64encode(f'{USER}:{PASSWORD}'.encode()).decode()}"
         self.session_id: str | None = None
 
     def _request(
@@ -61,7 +65,7 @@ class McpClient:
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json, text/event-stream",
-            "Authorization": f"Basic {self.auth}",
+            "Authorization": self.auth_header,
             "Connection": "keep-alive",
         }
         if include_session and self.session_id:

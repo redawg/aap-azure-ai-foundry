@@ -1,0 +1,27 @@
+---
+- name: aap_controller | Require job template id
+  ansible.builtin.assert:
+    that:
+      - aap_launch_job_template_id | length > 0
+    fail_msg: Set aap_launch_job_template_id (e.g. -e aap_launch_job_template_id=13).
+
+- name: aap_controller | Launch job template
+  ansible.builtin.uri:
+    url: "{{ aap_base_url }}/api/controller/v2/job_templates/{{ aap_launch_job_template_id }}/launch/"
+    method: POST
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    body_format: json
+    body: {}
+    status_code: 201
+  register: aap_controller_launch
+
+- name: aap_controller | Show launched job
+  ansible.builtin.debug:
+    msg: >-
+      Launched job id={{ aap_controller_launch.json.id }}
+      name={{ aap_controller_launch.json.name }}
+      status={{ aap_controller_launch.json.status }}
+      monitor={{ aap_base_url }}/execution/jobs/playbook/{{ aap_controller_launch.json.id }}/output

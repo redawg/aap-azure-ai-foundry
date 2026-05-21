@@ -1,0 +1,13 @@
+---
+# Install local CLI tools (oc/kubectl) on the control node.
+#
+#   ansible-playbook playbooks/install-local-tools.yml
+#
+- name: Install local workshop CLI tools
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+
+  roles:
+    - role: local_tools

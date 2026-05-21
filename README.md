@@ -2,20 +2,14 @@
 
 Register an **already-deployed** Ansible Automation Platform MCP server with [Azure AI Foundry Agent Service](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/model-context-protocol).
 
-This repo does **not** install MCP on AAP. Set `aap_mcp_base_url` to your existing MCP route.
+The repo is **Ansible-first**: shell scripts are thin wrappers around `ansible-playbook`.
 
-## Ansible
+## Quick start
 
 ```bash
 cp group_vars/all.yml.example group_vars/all.yml
-# Edit: aap_password, foundry_project_endpoint (workshop example below)
+# Edit: aap_password, foundry_project_endpoint (or foundry_account + foundry_project)
 
-# Option A — device-code login (no az CLI required)
-python3 -m pip install --user azure-identity
-AAP_PASSWORD='…' ./scripts/register-foundry.sh
-
-# Option B — Azure CLI
-sudo dnf install -y azure-cli   # or: ./scripts/install-az.sh
 az login
 ansible-playbook playbooks/site.yml
 ```
@@ -24,53 +18,73 @@ Workshop Foundry project endpoint (example):
 
 `https://foundry-wg2cd-1.services.ai.azure.com/api/projects/foundry-wg2cd-1-project`
 
-### Tags
+## Playbooks
+
+| Playbook | Purpose |
+|----------|---------|
+| [`playbooks/site.yml`](playbooks/site.yml) | Full registration: Gateway token, MCP verify, ARM connection, agent |
+| [`playbooks/verify.yml`](playbooks/verify.yml) | AAP API + MCP Bearer + optional OpenShift MCP routes |
+| [`playbooks/cleanup-foundry.yml`](playbooks/cleanup-foundry.yml) | Delete agents, connection, optional extra projects |
+| [`playbooks/redeploy.yml`](playbooks/redeploy.yml) | Cleanup then `site.yml` |
+| [`playbooks/update-agent-instructions.yml`](playbooks/update-agent-instructions.yml) | Azure alert → template recommendation prompt (agent v2+) |
+| [`playbooks/create-gateway-token.yml`](playbooks/create-gateway-token.yml) | Mint AAP Gateway token; print `Bearer …` for portal |
+| [`playbooks/list-job-templates.yml`](playbooks/list-job-templates.yml) | Controller API job templates |
+| [`playbooks/list-recent-jobs.yml`](playbooks/list-recent-jobs.yml) | Recent unified jobs |
+| [`playbooks/launch-job-template.yml`](playbooks/launch-job-template.yml) | Launch template by ID |
+| [`playbooks/mcp-list-job-templates.yml`](playbooks/mcp-list-job-templates.yml) | Templates via MCP |
+| [`playbooks/openshift-mcp-routes.yml`](playbooks/openshift-mcp-routes.yml) | `oc` MCP CRs and routes |
+| [`playbooks/install-local-tools.yml`](playbooks/install-local-tools.yml) | Install `oc` to `~/bin` |
+
+### Tags (`site.yml`)
 
 | Tag | Action |
 |-----|--------|
-| `foundry_verify_mcp` | Probe MCP `/mcp` only |
-| `foundry_connection` | Foundry project connection only |
+| `foundry_verify_mcp` | MCP initialize + `tools/list` only |
+| `foundry_connection` | ARM CustomKeys connection |
 | `foundry_agent` | Create agent with MCP tool |
-| `foundry_mcp_agent` | Full registration (default) |
+| `foundry_gateway_token` | Create Gateway Bearer token only |
 
-Examples:
-
-```bash
-# MCP health check only
-ansible-playbook playbooks/site.yml --tags foundry_verify_mcp
-
-# Connection only (no agent)
-ansible-playbook playbooks/site.yml -e foundry_register_agent=false --tags foundry_connection
-```
-
-## Copilot: Azure alert → job template recommendation
-
-The agent instructions map Azure Monitor / Foundry errors to AAP job templates using MCP `controller.job_templates_list`.
+## Copilot: Azure alert → job template
 
 | File | Purpose |
 |------|---------|
-| [`config/azure_alert_template_map.yml`](config/azure_alert_template_map.yml) | Keyword → template hints (workshop IDs 7, 9, 10, 13) |
-| [`examples/azure-alert-mcp-404.json`](examples/azure-alert-mcp-404.json) | Sample alert to paste in Playground |
-| [`scripts/update-foundry-agent-instructions.sh`](scripts/update-foundry-agent-instructions.sh) | Publish a new agent version with updated instructions |
+| [`config/azure_alert_template_map.yml`](config/azure_alert_template_map.yml) | Keyword → template hints |
+| [`examples/azure-alert-mcp-404.json`](examples/azure-alert-mcp-404.json) | Sample alert for Playground |
 
 ```bash
-az login
-FOUNDRY_MODEL_DEPLOYMENT_NAME=gpt-4o ./scripts/update-foundry-agent-instructions.sh
+ansible-playbook playbooks/update-agent-instructions.yml
 ```
 
-**Playground test:** paste the JSON from `examples/azure-alert-mcp-404.json` and ask: *Which job template should remediate this alert?*
+## Shell wrappers (optional)
 
-## Foundry portal (manual)
-
-1. [https://ai.azure.com](https://ai.azure.com) → **Connected resources** → **Custom keys** → name `Authorization`, value `Bearer <gateway-token>`
-2. **Agents** → **MCP** → server URL `{{ aap_mcp_base_url }}/mcp`
-
-## Scripts (optional)
+Scripts in `scripts/` call the playbooks above, for example:
 
 ```bash
-cp .env.example .env
-./scripts/configure-foundry-rest.sh
+./scripts/verify-lab-from-bastion.sh
+./scripts/register-foundry.sh
+./scripts/create-aap-gateway-token.sh
 ```
+
+`scripts/workshop-env.sh` still sets `NO_PROXY` for workshop hosts (not Ansible).
+
+## Roles
+
+| Role | Purpose |
+|------|---------|
+| `foundry_mcp_agent` | Gateway token, MCP verify, ARM connection, agent, cleanup |
+| `aap_workshop_verify` | Lab health checks |
+| `aap_controller` | List/launch job templates |
+| `local_tools` | Install `oc` locally |
+
+## Foundry portal (required for MCP auth)
+
+ARM cannot persist connection secrets. After `site.yml`:
+
+1. [https://ai.azure.com](https://ai.azure.com) → project → **Connected resources** → `aap-mcp-bearer`
+2. **Custom keys** → name **`Authorization`** → value **`Bearer <token>`** from `create-gateway-token.yml`
+3. **Agents** → MCP URL: `{{ aap_mcp_base_url }}/mcp`
+
+See [`scripts/FIX-FOUNDRY-MCP-404.md`](scripts/FIX-FOUNDRY-MCP-404.md).
 
 ## Variables
 

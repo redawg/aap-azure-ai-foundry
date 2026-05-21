@@ -18,7 +18,7 @@
     body_format: json
     body:
       name: "{{ foundry_agent_name }}"
-      description: Ansible Automation Platform agent via MCP
+      description: AAP copilot — recommend job templates from Azure alerts via MCP
       definition:
         kind: prompt
         model: "{{ foundry_model_deployment_name }}"

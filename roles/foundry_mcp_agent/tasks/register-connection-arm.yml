@@ -1,0 +1,30 @@
+---
+- name: foundry_mcp_agent | Register MCP connection via ARM (CustomKeys)
+  ansible.builtin.uri:
+    url: >-
+      https://management.azure.com/subscriptions/{{ foundry_sub }}/resourceGroups/{{ foundry_rg }}/providers/Microsoft.CognitiveServices/accounts/{{ foundry_account }}/projects/{{ foundry_project }}/connections/{{ foundry_mcp_connection_name }}?api-version={{ foundry_arm_connection_api_version }}
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ foundry_mgmt_token }}"
+      Content-Type: application/json
+    body_format: json
+    body:
+      properties:
+        authType: CustomKeys
+        category: CustomKeys
+        target: "_"
+        credentials:
+          keys:
+            Authorization: "{{ aap_mcp_auth_header }}"
+    status_code:
+      - 200
+      - 201
+  register: foundry_mcp_agent_arm_connection
+  no_log: true
+
+- name: foundry_mcp_agent | Remind operator to set connection secret in Foundry portal
+  ansible.builtin.debug:
+    msg:
+      - "ARM connection registered (secrets may not appear in GET responses)."
+      - "In https://ai.azure.com → project {{ foundry_project }} → Connected resources → {{ foundry_mcp_connection_name }}"
+      - "Custom keys → Name: Authorization → Value: {{ aap_mcp_auth_header }}"
