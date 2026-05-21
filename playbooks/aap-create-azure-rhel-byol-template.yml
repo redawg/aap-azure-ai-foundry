@@ -1,0 +1,30 @@
+---
+# MCP has no job_templates_create — uses Controller API after MCP project lookup.
+#
+#   ./scripts/aap-create-azure-rhel-byol-template.sh
+#   ansible-playbook playbooks/aap-create-azure-rhel-byol-template.yml -e @group_vars/all.yml
+#
+- name: Create AAP job template for Azure RHEL BYOS server
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - "{{ playbook_dir | dirname }}/config/azure_rhel_byol_job_template_extra_vars.yml"
+  vars:
+    aap_controller_action: create-azure-rhel-byol-job-template
+
+  pre_tasks:
+    - name: List projects via MCP (read-only)
+      ansible.builtin.command:
+        cmd: python3 {{ playbook_dir | dirname }}/scripts/aap_mcp_list_projects.py
+      register: aap_mcp_projects_probe
+      changed_when: false
+      failed_when: false
+
+    - name: Show MCP projects_list result
+      ansible.builtin.debug:
+        var: aap_mcp_projects_probe.stdout_lines
+      when: aap_mcp_projects_probe.stdout_lines is defined
+
+  roles:
+    - role: aap_controller

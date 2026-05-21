@@ -1,0 +1,13 @@
+---
+aap_azure_rhel_byol_default_extra_vars:
+  azure_location: eastus
+  azure_rg_name: aap-rhel-rg
+  azure_vm_name: aap-rhel-byol-01
+  azure_vm_admin_user: azureuser
+  azure_vm_size: Standard_D2s_v3
+  azure_rhel_offer: rhel-byos
+  azure_rhel_sku: rhel-lvm79
+  azure_rhel_plan_name: rhel-lvm79
+  azure_vm_public_ip: true
+  # Set at launch (required):
+  # azure_vm_ssh_public_key: "ssh-rsa AAAA... user@host"

@@ -45,3 +45,19 @@ aap_azure_fedora_ask_variables_on_launch: true
 aap_azure_fedora_job_template_id: ""
 aap_azure_fedora_job_extra_vars: ""
 aap_azure_fedora_default_extra_vars: {}
+
+# Job template: playbooks/azure-rhel-byol-server.yml
+aap_azure_rhel_job_template_name: "Azure RG + RHEL BYOS Server"
+aap_azure_rhel_job_template_description: >-
+  Create Azure resource group and RHEL BYOS VM (azure.azcollection,
+  license_type RHEL_BYOS). Playbook playbooks/azure-rhel-byol-server.yml.
+aap_azure_rhel_project_name: aap-azure-ai-foundry
+aap_azure_rhel_project_id: 0
+aap_azure_rhel_inventory_id: 3
+aap_azure_rhel_playbook: playbooks/azure-rhel-byol-server.yml
+aap_azure_rhel_execution_environment_id: 0
+aap_azure_rhel_credential_id: 0
+aap_azure_rhel_ask_variables_on_launch: true
+aap_azure_rhel_job_template_id: ""
+aap_azure_rhel_job_extra_vars: ""
+aap_azure_rhel_byol_default_extra_vars: {}
