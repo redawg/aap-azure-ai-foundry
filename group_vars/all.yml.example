@@ -41,6 +41,14 @@ ocp_namespace: aap
 # ocp_token: sha256~…
 ocp_api_url: https://api.cluster-wg2cd-2.dynamic2.redhatworkshops.io:6443
 
+# AWS open environment (gitignored in all.yml — do not commit)
+# aws_access_key_id: ""
+# aws_secret_access_key: ""
+
+# Bastion (optional notes in all.yml)
+# workshop_bastion_ssh: ssh lab-user@host -p PORT
+# workshop_bastion_password: ""
+
 # AAP 2.6 analytics (MetricsService + metrics-utility)
 # aap_analytics_enable_metrics_service: true
 # aap_analytics_enable_metrics_utility: true
