@@ -46,7 +46,7 @@ AAP_MCP_BASE = os.environ.get(
 )
 CONNECTION_NAME = os.environ.get("MCP_PROJECT_CONNECTION_NAME", "aap-mcp-bearer")
 AGENT_NAME = os.environ.get("FOUNDRY_AGENT_NAME", "aap-automation-agent")
-MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT_NAME", "claude-sonnet-4-5")
+MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT_NAME", "gpt-4.1")
 SCOPE_AI = "https://ai.azure.com/.default"
 SCOPE_MGMT = "https://management.azure.com/.default"
 CONN_ARM_API = "2025-06-01"

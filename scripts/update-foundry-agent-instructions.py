@@ -15,7 +15,7 @@ PROJECT_ENDPOINT = os.environ.get(
     "https://foundry-wg2cd-1.services.ai.azure.com/api/projects/foundry-wg2cd-1-project",
 ).strip()
 AGENT_NAME = os.environ.get("FOUNDRY_AGENT_NAME", "aap-automation-agent").strip()
-MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT_NAME", "gpt-4o").strip()
+MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT_NAME", "gpt-4.1").strip()
 MCP_BASE = os.environ.get(
     "AAP_MCP_BASE_URL",
     "https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io",
@@ -42,7 +42,7 @@ def main() -> int:
     tool = MCPTool(
         server_label=MCP_LABEL,
         server_url=f"{MCP_BASE}/mcp",
-        require_approval="always",
+        require_approval="never",
         project_connection_id=CONNECTION_NAME,
     )
 

@@ -1,5 +1,5 @@
 ---
-foundry_model_deployment_name: gpt-4o
+foundry_model_deployment_name: gpt-4.1
 foundry_mcp_connection_name: aap-mcp-bearer
 foundry_agent_name: aap-automation-agent
 foundry_mcp_server_label: ansible-aap

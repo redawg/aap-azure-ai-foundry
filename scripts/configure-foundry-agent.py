@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 PROJECT_ENDPOINT = os.environ.get("FOUNDRY_PROJECT_ENDPOINT", "").strip()
-MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT_NAME", "claude-sonnet-4-5").strip()
+MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT_NAME", "gpt-4.1").strip()
 CONNECTION_NAME = os.environ.get("MCP_PROJECT_CONNECTION_NAME", "aap-mcp-bearer").strip()
 MCP_BASE = os.environ.get(
     "AAP_MCP_BASE_URL",

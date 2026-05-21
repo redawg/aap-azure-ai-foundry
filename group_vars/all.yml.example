@@ -18,7 +18,7 @@ foundry_rg: openenv-wg2cd-1
 foundry_sub: 9dc2c3d2-35a8-4370-8997-b56a57b5778d
 foundry_project_endpoint: ""  # or full https://….services.ai.azure.com/api/projects/…
 
-foundry_model_deployment_name: gpt-4o
+foundry_model_deployment_name: gpt-4.1
 foundry_mcp_connection_name: aap-mcp-bearer
 foundry_agent_name: aap-automation-agent
 foundry_mcp_server_label: ansible-aap
