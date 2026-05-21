@@ -1,0 +1,6 @@
+---
+cisco_snmp_default_extra_vars:
+  cisco_snmp_expected_config_file: files/cisco_snmp_expected.cfg
+  cisco_snmp_community: ""
+  cisco_snmp_require_ro: true
+  cisco_snmp_target_hosts: cisco_network

@@ -77,6 +77,22 @@ templates:
       - function app
       - alert bridge
       - openenv
+  - id: 39
+    name: Cisco SNMP compliance check
+    org: Default
+    use_when:
+      - snmp
+      - cisco
+      - ios
+      - network device
+      - community string
+      - snmp-server
+      - configuration changed
+      - baseline
+      - compliance
+      - core-sw
+      - switch
+      - router
 
 alert_field_hints:
   - alertRuleName

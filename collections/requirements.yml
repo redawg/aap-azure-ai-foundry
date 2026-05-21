@@ -15,3 +15,7 @@ collections:
   # roles/azure_fedora_foundry_alerts (community.general.archive for Function zip)
   - name: community.general
     version: ">=8.0.0"
+
+  # playbooks/cisco-snmp-compliance.yml
+  - name: cisco.ios
+    version: ">=5.0.0"

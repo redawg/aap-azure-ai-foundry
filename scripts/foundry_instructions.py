@@ -17,6 +17,12 @@ MAP_PATH = Path(
         REPO_ROOT / "config" / "azure_alert_template_map.yml",
     )
 )
+SKILL_PATH = Path(
+    os.environ.get(
+        "FOUNDRY_AGENT_AAP_MCP_SKILL",
+        REPO_ROOT / "config" / "foundry_agent_aap_mcp_skill.md",
+    )
+)
 
 
 def _format_mapping_table(entries: list[dict]) -> str:
@@ -39,12 +45,20 @@ def load_alert_template_map(path: Path | None = None) -> dict:
         return yaml.safe_load(f) or {}
 
 
+def load_aap_mcp_skill(path: Path | None = None) -> str:
+    path = path or SKILL_PATH
+    if not path.is_file():
+        return ""
+    return path.read_text(encoding="utf-8").strip()
+
+
 def build_agent_instructions(map_path: Path | None = None) -> str:
     data = load_alert_template_map(map_path)
     table = _format_mapping_table(data.get("templates", []))
     fields = ", ".join(f"`{f}`" for f in data.get("alert_field_hints", []))
+    skill = load_aap_mcp_skill()
 
-    return f"""You are an Ansible Automation Platform (AAP) copilot integrated with Azure AI Foundry.
+    return f"""{skill}
 
 ## Primary workflow: Azure alert → job template recommendation
 
@@ -57,7 +71,7 @@ When the user provides an Azure Monitor alert, Action Group payload, Log Analyti
    - Recommended template **ID** and **name**
    - Confidence (high / medium / low)
    - Brief remediation summary tied to the alert
-   - Optional next step: offer to launch via `controller.job_templates_launch_create` only after explicit user approval (writes require approval).
+   - Optional next step: offer to launch via `job_templates_launch_create` only after explicit user approval (writes require approval).
 
 If no template fits, say so and suggest creating one; still list available templates.
 

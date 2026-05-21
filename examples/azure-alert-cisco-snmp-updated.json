@@ -1,0 +1,27 @@
+{
+  "schemaId": "azureMonitorCommonAlertSchema",
+  "data": {
+    "essentials": {
+      "alertId": "example-cisco-snmp-updated",
+      "alertRule": "Cisco device SNMP configuration changed",
+      "severity": "Sev2",
+      "signalType": "Log",
+      "monitorCondition": "Fired",
+      "description": "SNMP settings were updated on Cisco IOS device core-sw01. Validate community string matches the approved baseline.",
+      "targetResourceType": "Microsoft.Network/networkDevices",
+      "targetResourceName": "core-sw01",
+      "targetResourceGroup": "network-rg"
+    },
+    "alertContext": {
+      "properties": {
+        "deviceHostname": "core-sw01",
+        "deviceVendor": "Cisco",
+        "devicePlatform": "IOS-XE",
+        "operationName": "snmp configuration change",
+        "message": "SNMP has been updated on Cisco device core-sw01. Run compliance check against the approved snmp baseline file.",
+        "changeSource": "NETCONF/CLI",
+        "correlationId": "cisco-snmp-change-001"
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+---
+# Example inventory for playbooks/cisco-snmp-compliance.yml
+# Copy and set ansible_host / credentials for your Cisco switch or router.
+#
+#   cp inventories/cisco_network.yml.example inventories/cisco_network.yml
+#   ansible-playbook playbooks/cisco-snmp-compliance.yml -i inventories/cisco_network.yml -e @group_vars/all.yml
+
+all:
+  children:
+    cisco_network:
+      hosts:
+        core-sw01:
+          ansible_host: 192.0.2.10
+          ansible_connection: ansible.netcommon.network_cli
+          ansible_network_os: cisco.ios.ios
+          ansible_user: admin
+          # ansible_password: set via -e or AAP machine credential at launch

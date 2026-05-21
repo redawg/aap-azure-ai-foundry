@@ -1,0 +1,6 @@
+---
+# Parsed from files/cisco_snmp_expected.cfg at runtime; override at job launch if needed.
+cisco_snmp_expected_config_file: files/cisco_snmp_expected.cfg
+# Primary string to match in running config (extracted from cfg if empty)
+cisco_snmp_community: ""
+cisco_snmp_require_ro: true

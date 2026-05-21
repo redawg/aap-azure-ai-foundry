@@ -38,7 +38,20 @@ Paste [`azure-alert-vm-cpu-high.json`](azure-alert-vm-cpu-high.json).
 
 ---
 
-### 3. RHEL BYOS deploy failure (template hint: Azure RG + RHEL BYOS Server)
+### 3. Cisco SNMP updated (template hint: Cisco SNMP compliance check)
+
+```text
+An SNMP configuration change was reported on a Cisco device. Recommend an AAP job template and whether to launch a compliance job.
+
+```
+
+Paste [`azure-alert-cisco-snmp-updated.json`](azure-alert-cisco-snmp-updated.json).
+
+**Expected:** **Cisco SNMP compliance check** after `job_templates_list` (playbook compares running config to `files/cisco_snmp_expected.cfg`).
+
+---
+
+### 4. RHEL BYOS deploy failure (template hint: Azure RG + RHEL BYOS Server)
 
 ```text
 An Azure activity log style alert fired for a failed RHEL BYOS VM deployment. Recommend an AAP job template and whether to launch it (ask before launch).

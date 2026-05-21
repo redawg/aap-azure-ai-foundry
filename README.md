@@ -36,6 +36,15 @@ On the workshop cluster, MCP exposes **`projects_list`** but not **`projects_cre
 | Hub / Galaxy API token | [automation-hub/token](https://console.redhat.com/ansible/automation-hub/token) | [`docs/REDHAT-CONSOLE-CREDENTIALS.md`](docs/REDHAT-CONSOLE-CREDENTIALS.md), [`playbooks/aap-redhat-galaxy-credential.yml`](playbooks/aap-redhat-galaxy-credential.yml) |
 | Analytics service account | [iam/service-accounts](https://console.redhat.com/iam/service-accounts) | Same doc, [`playbooks/aap-redhat-analytics-service-account.yml`](playbooks/aap-redhat-analytics-service-account.yml) |
 
+## Cursor skill
+
+| Artifact | Purpose |
+|----------|---------|
+| [`config/foundry_agent_aap_mcp_skill.md`](config/foundry_agent_aap_mcp_skill.md) | **Foundry gpt-4.1 agent** system instructions (AAP MCP tool usage) |
+| [`.cursor/skills/gpt41-aap-mcp/`](.cursor/skills/gpt41-aap-mcp/SKILL.md) | **Cursor IDE** skill (same workflow + repo commands) |
+
+Publish skill to Foundry: `ansible-playbook playbooks/update-agent-instructions.yml -e @group_vars/all.yml`
+
 ## Quick start
 
 ```bash
@@ -97,6 +106,7 @@ Workshop Foundry project endpoint (example):
 | [`examples/azure-alert-mcp-404.json`](examples/azure-alert-mcp-404.json) | MCP tools/list / Bearer auth failure |
 | [`examples/azure-alert-vm-cpu-high.json`](examples/azure-alert-vm-cpu-high.json) | Metric alert: VM CPU high |
 | [`examples/azure-alert-rhel-deploy-failed.json`](examples/azure-alert-rhel-deploy-failed.json) | Activity-style: RHEL BYOS deploy failed |
+| [`examples/azure-alert-cisco-snmp-updated.json`](examples/azure-alert-cisco-snmp-updated.json) | Log alert: Cisco SNMP configuration changed |
 
 ```bash
 ansible-playbook playbooks/update-agent-instructions.yml

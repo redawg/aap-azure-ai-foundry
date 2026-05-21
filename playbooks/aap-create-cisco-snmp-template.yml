@@ -1,0 +1,16 @@
+---
+# Create AAP job template for Cisco SNMP compliance (Controller API).
+#
+#   ansible-playbook playbooks/aap-create-cisco-snmp-template.yml -e @group_vars/all.yml
+#
+- name: Create AAP job template for Cisco SNMP compliance
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - "{{ playbook_dir | dirname }}/config/cisco_snmp_job_template_extra_vars.yml"
+  vars:
+    aap_controller_action: create-cisco-snmp-job-template
+
+  roles:
+    - role: aap_controller

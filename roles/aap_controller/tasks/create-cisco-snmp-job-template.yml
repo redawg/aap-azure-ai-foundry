@@ -1,0 +1,138 @@
+---
+- name: aap_controller | Resolve project id for Cisco SNMP template
+  when: aap_cisco_snmp_project_id | int == 0
+  ansible.builtin.uri:
+    url: >-
+      {{ aap_base_url }}/api/controller/v2/projects/?search={{
+      aap_cisco_snmp_project_name | urlencode
+      }}
+    method: GET
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    status_code: 200
+  register: aap_controller_cisco_snmp_project_search
+  changed_when: false
+
+- name: aap_controller | Set Cisco SNMP project id
+  when:
+    - aap_cisco_snmp_project_id | int == 0
+    - aap_controller_cisco_snmp_project_search.json.results | length > 0
+  ansible.builtin.set_fact:
+    aap_cisco_snmp_project_id: "{{ aap_controller_cisco_snmp_project_search.json.results[0].id }}"
+
+- name: aap_controller | Require project for Cisco SNMP template
+  ansible.builtin.assert:
+    that:
+      - aap_cisco_snmp_project_id | int > 0
+    fail_msg: >-
+      Project '{{ aap_cisco_snmp_project_name }}' not found. Sync SCM on Controller.
+
+- name: aap_controller | Search existing Cisco SNMP job template
+  ansible.builtin.uri:
+    url: >-
+      {{ aap_base_url }}/api/controller/v2/job_templates/?search={{
+      aap_cisco_snmp_job_template_name | urlencode
+      }}&page_size=20
+    method: GET
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    status_code: 200
+  register: aap_controller_cisco_snmp_jt_search
+  changed_when: false
+
+- name: aap_controller | Pick matching Cisco SNMP job template
+  ansible.builtin.set_fact:
+    aap_controller_cisco_snmp_jt_match: >-
+      {{
+        (
+          aap_controller_cisco_snmp_jt_search.json.results
+          | selectattr('name', 'equalto', aap_cisco_snmp_job_template_name)
+          | list
+          | first
+          | default({}, true)
+        )
+      }}
+
+- name: aap_controller | Serialize Cisco SNMP extra_vars
+  ansible.builtin.set_fact:
+    aap_cisco_snmp_job_extra_vars: "{{ cisco_snmp_default_extra_vars | to_nice_yaml }}"
+
+- name: aap_controller | Build Cisco SNMP job template body
+  ansible.builtin.set_fact:
+    aap_controller_cisco_snmp_jt_body: >-
+      {{
+        {
+          'name': aap_cisco_snmp_job_template_name,
+          'description': aap_cisco_snmp_job_template_description,
+          'job_type': 'run',
+          'organization': aap_organization_id | int,
+          'project': aap_cisco_snmp_project_id | int,
+          'inventory': aap_cisco_snmp_inventory_id | int,
+          'playbook': aap_cisco_snmp_playbook,
+          'become_enabled': false,
+          'ask_variables_on_launch': aap_cisco_snmp_ask_variables_on_launch,
+          'ask_inventory_on_launch': aap_cisco_snmp_ask_inventory_on_launch,
+          'extra_vars': aap_cisco_snmp_job_extra_vars,
+        }
+        | combine(
+            {'execution_environment': aap_cisco_snmp_execution_environment_id | int}
+            if (aap_cisco_snmp_execution_environment_id | int) > 0
+            else {}
+          )
+        | combine(
+            {'credential': aap_cisco_snmp_credential_id | int}
+            if (aap_cisco_snmp_credential_id | int) > 0
+            else {}
+          )
+      }}
+
+- name: aap_controller | Create Cisco SNMP job template
+  when: aap_controller_cisco_snmp_jt_match.id is not defined
+  ansible.builtin.uri:
+    url: "{{ aap_base_url }}/api/controller/v2/job_templates/"
+    method: POST
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    body_format: json
+    body: "{{ aap_controller_cisco_snmp_jt_body }}"
+    status_code: 201
+  register: aap_controller_cisco_snmp_jt_create
+
+- name: aap_controller | Update Cisco SNMP job template
+  when: aap_controller_cisco_snmp_jt_match.id is defined
+  ansible.builtin.uri:
+    url: >-
+      {{ aap_base_url }}/api/controller/v2/job_templates/{{
+      aap_controller_cisco_snmp_jt_match.id }}/"
+    method: PATCH
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    body_format: json
+    body: "{{ aap_controller_cisco_snmp_jt_body }}"
+    status_code: 200
+  register: aap_controller_cisco_snmp_jt_update
+
+- name: aap_controller | Record Cisco SNMP job template id
+  ansible.builtin.set_fact:
+    aap_cisco_snmp_job_template_id: >-
+      {{
+        aap_controller_cisco_snmp_jt_create.json.id
+        if aap_controller_cisco_snmp_jt_match.id is not defined
+        else aap_controller_cisco_snmp_jt_match.id
+      }}
+
+- name: aap_controller | Cisco SNMP job template summary
+  ansible.builtin.debug:
+    msg:
+      - "Job template id={{ aap_cisco_snmp_job_template_id }} name={{ aap_cisco_snmp_job_template_name }}"
+      - "Playbook={{ aap_cisco_snmp_playbook }} baseline={{ cisco_snmp_default_extra_vars.cisco_snmp_expected_config_file }}"
+      - "Attach network credential + inventory with Cisco hosts (see inventories/cisco_network.yml.example)."
+      - "Foundry alert sample: examples/azure-alert-cisco-snmp-updated.json"

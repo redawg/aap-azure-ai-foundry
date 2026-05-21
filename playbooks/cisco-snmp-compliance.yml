@@ -1,0 +1,100 @@
+---
+# Compare live Cisco SNMP settings to the approved baseline in files/cisco_snmp_expected.cfg.
+#
+# Requires: inventory with network host(s), network CLI credential on job template.
+#   ansible-galaxy collection install -r collections/requirements.yml
+#
+# Usage:
+#   ansible-playbook playbooks/cisco-snmp-compliance.yml -e @group_vars/all.yml \
+#     -i inventories/cisco_network.yml.example \
+#     -e ansible_user=admin -e ansible_password=secret
+#
+- name: Cisco SNMP compliance — compare running config to baseline file
+  hosts: "{{ cisco_snmp_target_hosts | default('cisco_network') }}"
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+    cisco_snmp_baseline_path: "{{ repo_root }}/{{ cisco_snmp_expected_config_file }}"
+
+  tasks:
+    - name: Load expected SNMP baseline from repo file
+      ansible.builtin.set_fact:
+        cisco_snmp_baseline_raw: "{{ lookup('file', cisco_snmp_baseline_path) }}"
+
+    - name: Extract expected snmp-server community lines from baseline
+      ansible.builtin.set_fact:
+        cisco_snmp_expected_lines: >-
+          {{
+            cisco_snmp_baseline_raw.splitlines()
+            | map('trim')
+            | select('match', '^snmp-server community ')
+            | list
+          }}
+
+    - name: Require at least one snmp-server community line in baseline file
+      ansible.builtin.assert:
+        that:
+          - cisco_snmp_expected_lines | length > 0
+        fail_msg: >-
+          No 'snmp-server community' lines in {{ cisco_snmp_baseline_path }}.
+          Add the approved community string to the config file.
+
+    - name: Set expected community token from extra var or first baseline line
+      ansible.builtin.set_fact:
+        cisco_snmp_community_expected: >-
+          {{
+            cisco_snmp_community
+            if (cisco_snmp_community | default('') | length > 0)
+            else (
+              cisco_snmp_expected_lines[0].split()[2]
+              if (cisco_snmp_expected_lines[0].split() | length >= 3)
+              else ''
+            )
+          }}
+
+    - name: Require expected community string
+      ansible.builtin.assert:
+        that:
+          - cisco_snmp_community_expected | length > 0
+        fail_msg: Set cisco_snmp_community or add snmp-server community line to baseline file.
+
+    - name: Fail when network_os is not set (need Cisco inventory host vars)
+      ansible.builtin.fail:
+        msg: >-
+          Host {{ inventory_hostname }} needs ansible_network_os (e.g. cisco.ios.ios)
+          and network_cli connection vars. See inventories/cisco_network.yml.example.
+      when: ansible_network_os is not defined
+
+    - name: Collect running SNMP-related configuration from Cisco device
+      cisco.ios.ios_command:
+        commands:
+          - show running-config | include ^snmp-server
+          - show snmp community
+      register: cisco_snmp_running
+
+    - name: Verify each baseline snmp-server community line appears in running config
+      ansible.builtin.assert:
+        that:
+          - item in cisco_snmp_running.stdout[0]
+        fail_msg: >-
+          DRIFT on {{ inventory_hostname }}: baseline line missing from running config:
+          {{ item }}
+      loop: "{{ cisco_snmp_expected_lines }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Verify expected community appears in SNMP community table
+      ansible.builtin.assert:
+        that:
+          - cisco_snmp_community_expected in cisco_snmp_running.stdout[1]
+        fail_msg: >-
+          DRIFT on {{ inventory_hostname }}: community '{{ cisco_snmp_community_expected }}'
+          not found in 'show snmp community' output.
+      when: cisco_snmp_require_ro | bool
+
+    - name: SNMP compliance passed
+      ansible.builtin.debug:
+        msg:
+          - "Host {{ inventory_hostname }}: SNMP settings match {{ cisco_snmp_baseline_path }}"
+          - "Expected community: {{ cisco_snmp_community_expected }}"
+          - "Baseline lines checked: {{ cisco_snmp_expected_lines | length }}"
