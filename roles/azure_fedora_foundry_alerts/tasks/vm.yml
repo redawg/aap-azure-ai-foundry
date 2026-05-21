@@ -1,0 +1,80 @@
+---
+- name: azure_fedora_foundry_alerts | Create virtual network
+  when: azure_fedora_create_vnet | bool
+  ansible.builtin.command:
+    argv:
+      - az
+      - network
+      - vnet
+      - create
+      - --resource-group
+      - "{{ azure_fedora_deploy_rg }}"
+      - --location
+      - "{{ azure_location }}"
+      - --name
+      - "{{ azure_fedora_vnet_name }}"
+      - --address-prefix
+      - "{{ azure_fedora_vnet_prefix }}"
+      - --subnet-name
+      - "{{ azure_fedora_subnet_name }}"
+      - --subnet-prefix
+      - "{{ azure_fedora_subnet_prefix }}"
+  register: azure_fedora_vnet_create
+  changed_when: "'already exists' not in (azure_fedora_vnet_create.stderr | default('') | lower)"
+
+- name: azure_fedora_foundry_alerts | Build az vm create argument list
+  ansible.builtin.set_fact:
+    azure_fedora_vm_create_argv:
+      - az
+      - vm
+      - create
+      - --resource-group
+      - "{{ azure_fedora_deploy_rg }}"
+      - --location
+      - "{{ azure_location }}"
+      - --name
+      - "{{ azure_fedora_name_prefix }}-vm"
+      - --image
+      - "{{ azure_fedora_vm_image }}"
+      - --size
+      - "{{ azure_fedora_vm_size }}"
+      - --admin-username
+      - "{{ azure_fedora_admin_user }}"
+      - --public-ip-sku
+      - Standard
+      - --output
+      - json
+
+- name: azure_fedora_foundry_alerts | Add vnet args for VM create
+  when: azure_fedora_create_vnet | bool
+  ansible.builtin.set_fact:
+    azure_fedora_vm_create_argv: >-
+      {{ azure_fedora_vm_create_argv + [
+        '--vnet-name', azure_fedora_vnet_name,
+        '--subnet', azure_fedora_subnet_name
+      ] }}
+
+- name: azure_fedora_foundry_alerts | Add SSH key generation for VM create
+  when: azure_fedora_generate_ssh_keys | bool
+  ansible.builtin.set_fact:
+    azure_fedora_vm_create_argv: "{{ azure_fedora_vm_create_argv + ['--generate-ssh-keys'] }}"
+
+- name: azure_fedora_foundry_alerts | Create Fedora Linux VM
+  ansible.builtin.command:
+    argv: "{{ azure_fedora_vm_create_argv }}"
+  register: azure_fedora_vm_create
+  changed_when: azure_fedora_vm_create.rc == 0
+
+- name: azure_fedora_foundry_alerts | Parse VM resource id
+  ansible.builtin.set_fact:
+    azure_fedora_vm_id: "{{ (azure_fedora_vm_create.stdout | from_json).id }}"
+    azure_fedora_vm_name: "{{ (azure_fedora_vm_create.stdout | from_json).name }}"
+  when: azure_fedora_vm_create.stdout | length > 0
+
+- name: azure_fedora_foundry_alerts | Show VM details
+  ansible.builtin.debug:
+    msg:
+      - "VM: {{ azure_fedora_vm_name }}"
+      - "Resource ID: {{ azure_fedora_vm_id }}"
+      - "Image: {{ azure_fedora_vm_image }}"
+  when: azure_fedora_vm_id is defined

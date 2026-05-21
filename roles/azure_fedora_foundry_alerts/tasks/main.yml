@@ -1,0 +1,45 @@
+---
+- name: azure_fedora_foundry_alerts | Validate prerequisites
+  ansible.builtin.include_tasks: validate.yml
+  tags:
+    - azure_fedora_foundry_alerts
+    - azure_validate
+
+- name: azure_fedora_foundry_alerts | Deploy Fedora VM
+  ansible.builtin.include_tasks: vm.yml
+  when: azure_fedora_deploy_vm | bool
+  tags:
+    - azure_fedora_foundry_alerts
+    - azure_vm
+
+- name: azure_fedora_foundry_alerts | Deploy alert bridge Function App
+  ansible.builtin.include_tasks: function-bridge.yml
+  when: azure_fedora_deploy_alert_bridge | bool
+  tags:
+    - azure_fedora_foundry_alerts
+    - azure_function
+
+- name: azure_fedora_foundry_alerts | Create Monitor action group and metric alert
+  ansible.builtin.include_tasks: monitor.yml
+  when: azure_fedora_deploy_monitor | bool
+  tags:
+    - azure_fedora_foundry_alerts
+    - azure_monitor
+
+- name: azure_fedora_foundry_alerts | Test webhook → Foundry agent
+  ansible.builtin.include_tasks: test-foundry-invoke.yml
+  when: azure_fedora_test_foundry_invoke | bool
+  tags:
+    - azure_fedora_foundry_alerts
+    - azure_test
+
+- name: azure_fedora_foundry_alerts | Summary
+  ansible.builtin.debug:
+    msg:
+      - "Fedora VM: {{ azure_fedora_vm_name | default('skipped') }} ({{ azure_fedora_vm_image }})"
+      - "Alert webhook: Function {{ azure_fedora_function_name | default('skipped') }} → Foundry agent {{ foundry_agent_name }}"
+      - "Metric alert: {{ azure_fedora_alert_rule_name | default('skipped') }} (CPU > {{ azure_fedora_alert_cpu_threshold }}%)"
+      - "Manual test: POST {{ repo_root }}/examples/azure-alert-mcp-404.json to the webhook (see playbook output with -e azure_fedora_test_foundry_invoke=true)"
+      - "Portal: https://ai.azure.com → {{ foundry_project }} → Agents → {{ foundry_agent_name }}"
+  tags:
+    - azure_fedora_foundry_alerts

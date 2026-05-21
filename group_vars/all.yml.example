@@ -46,3 +46,9 @@ ocp_api_url: https://api.cluster-wg2cd-2.dynamic2.redhatworkshops.io:6443
 
 # Launch playbook (playbooks/launch-job-template.yml)
 # aap_launch_job_template_id: "13"
+
+# Azure Fedora VM + Monitor → Foundry copilot (playbooks/azure-fedora-alerts.yml)
+azure_location: eastus
+azure_fedora_name_prefix: aap-fedora-demo
+azure_fedora_vm_image: "FedoraLinux:fedora-41:41-gen2:latest"
+# azure_fedora_test_foundry_invoke: true

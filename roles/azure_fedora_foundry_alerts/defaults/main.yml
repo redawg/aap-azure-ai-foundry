@@ -1,0 +1,45 @@
+---
+# Reuse workshop Foundry settings when set in group_vars/all.yml
+foundry_account: foundry-wg2cd-1
+foundry_project: foundry-wg2cd-1-project
+foundry_rg: openenv-wg2cd-1
+foundry_sub: 9dc2c3d2-35a8-4370-8997-b56a57b5778d
+foundry_project_endpoint: ""
+foundry_agent_name: aap-automation-agent
+foundry_agent_token: ""
+
+azure_location: eastus
+azure_fedora_deploy_rg: "{{ foundry_rg }}"
+azure_fedora_name_prefix: aap-fedora-demo
+
+# Fedora on Azure (URN varies by region; list with: az vm image list -p FedoraLinux -l <location>)
+azure_fedora_vm_image: "FedoraLinux:fedora-41:41-gen2:latest"
+azure_fedora_vm_size: Standard_B2s
+azure_fedora_admin_user: azureuser
+azure_fedora_generate_ssh_keys: true
+
+azure_fedora_create_vnet: true
+azure_fedora_vnet_name: "{{ azure_fedora_name_prefix }}-vnet"
+azure_fedora_subnet_name: default
+azure_fedora_vnet_prefix: 10.42.0.0/16
+azure_fedora_subnet_prefix: 10.42.1.0/24
+
+azure_fedora_deploy_vm: true
+azure_fedora_deploy_alert_bridge: true
+azure_fedora_deploy_monitor: true
+azure_fedora_test_foundry_invoke: false
+
+# Function App (alert → Foundry agent)
+azure_fedora_function_name: "{{ azure_fedora_name_prefix }}-alert-fn"
+azure_fedora_storage_name: "{{ azure_fedora_name_prefix | regex_replace('[^a-z0-9]', '') }}stg"
+azure_fedora_function_runtime: python
+azure_fedora_function_runtime_version: "3.11"
+azure_fedora_responses_api_version: v1
+
+# Monitor
+azure_fedora_action_group_name: "{{ azure_fedora_name_prefix }}-ag"
+azure_fedora_alert_rule_name: "{{ azure_fedora_name_prefix }}-cpu-high"
+azure_fedora_alert_severity: 2
+azure_fedora_alert_cpu_threshold: 75
+azure_fedora_alert_window_size: 5m
+azure_fedora_alert_evaluation_frequency: 1m

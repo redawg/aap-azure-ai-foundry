@@ -1,0 +1,31 @@
+---
+- name: azure_fedora_foundry_alerts | Create action group (webhook → Function → Foundry agent)
+  ansible.builtin.command:
+    cmd: >-
+      az monitor action-group create
+      --resource-group {{ azure_fedora_deploy_rg }}
+      --name {{ azure_fedora_action_group_name }}
+      --action webhook foundry-agent {{ azure_fedora_webhook_url }}
+      --short-name foundry
+      --output json
+  register: azure_fedora_action_group
+  changed_when: azure_fedora_action_group.rc == 0
+  no_log: true
+
+- name: azure_fedora_foundry_alerts | Create CPU metric alert on Fedora VM
+  ansible.builtin.command:
+    cmd: >-
+      az monitor metrics alert create
+      --resource-group {{ azure_fedora_deploy_rg }}
+      --name {{ azure_fedora_alert_rule_name }}
+      --scopes {{ azure_fedora_vm_id }}
+      --condition "avg Percentage CPU > {{ azure_fedora_alert_cpu_threshold }}"
+      --window-size {{ azure_fedora_alert_window_size }}
+      --evaluation-frequency {{ azure_fedora_alert_evaluation_frequency }}
+      --severity {{ azure_fedora_alert_severity }}
+      --description "High CPU on Fedora demo VM — forward to Foundry AAP copilot"
+      --action {{ azure_fedora_action_group_name }}
+      --output json
+  register: azure_fedora_metric_alert
+  changed_when: azure_fedora_metric_alert.rc == 0
+  when: azure_fedora_vm_id is defined

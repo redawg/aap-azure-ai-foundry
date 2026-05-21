@@ -1,0 +1,17 @@
+---
+- name: azure_fedora_foundry_alerts | POST sample alert payload to webhook (end-to-end test)
+  ansible.builtin.uri:
+    url: "{{ azure_fedora_webhook_url }}"
+    method: POST
+    body_format: json
+    body: "{{ lookup('file', repo_root + '/examples/azure-alert-mcp-404.json') | from_json }}"
+    status_code:
+      - 200
+      - 202
+    timeout: 180
+  register: azure_fedora_webhook_test
+  no_log: true
+
+- name: azure_fedora_foundry_alerts | Webhook test response (truncated)
+  ansible.builtin.debug:
+    msg: "{{ (azure_fedora_webhook_test.content | default(''))[:500] }}"

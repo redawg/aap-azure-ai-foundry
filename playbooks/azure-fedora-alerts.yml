@@ -1,0 +1,26 @@
+---
+# Deploy a Fedora VM on Azure and route Monitor alerts to the Foundry AAP copilot agent.
+#
+# Prerequisites:
+#   az login
+#   Foundry agent registered (ansible-playbook playbooks/site.yml)
+#   ansible-galaxy collection install -r collections/requirements.yml
+#
+# Usage:
+#   ansible-playbook playbooks/azure-fedora-alerts.yml
+#   ansible-playbook playbooks/azure-fedora-alerts.yml -e azure_fedora_test_foundry_invoke=true
+#
+# If Fedora image is unavailable in your region:
+#   az vm image list -p FedoraLinux -l eastus -o table
+#   ansible-playbook playbooks/azure-fedora-alerts.yml -e azure_fedora_vm_image='FedoraLinux:fedora-41:41-gen2:latest'
+#
+- name: Azure Fedora VM with alerts to Foundry copilot
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+
+  roles:
+    - role: azure_fedora_foundry_alerts
+      tags:
+        - azure_fedora_foundry_alerts

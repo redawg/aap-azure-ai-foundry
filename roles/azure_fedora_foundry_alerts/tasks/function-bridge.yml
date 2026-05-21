@@ -1,0 +1,108 @@
+---
+- name: azure_fedora_foundry_alerts | Create storage account for Function App
+  ansible.builtin.command:
+    cmd: >-
+      az storage account create
+      --name {{ azure_fedora_storage_name_safe }}
+      --resource-group {{ azure_fedora_deploy_rg }}
+      --location {{ azure_location }}
+      --sku Standard_LRS
+      --kind StorageV2
+      --output json
+  register: azure_fedora_storage_create
+  changed_when: azure_fedora_storage_create.rc == 0
+
+- name: azure_fedora_foundry_alerts | Create Function App (Python, system-assigned MI)
+  ansible.builtin.command:
+    cmd: >-
+      az functionapp create
+      --resource-group {{ azure_fedora_deploy_rg }}
+      --consumption-plan-location {{ azure_location }}
+      --runtime {{ azure_fedora_function_runtime }}
+      --runtime-version {{ azure_fedora_function_runtime_version }}
+      --functions-version 4
+      --name {{ azure_fedora_function_name }}
+      --storage-account {{ azure_fedora_storage_name_safe }}
+      --assign-identity
+      --output json
+  register: azure_fedora_function_create
+  changed_when: azure_fedora_function_create.rc == 0
+
+- name: azure_fedora_foundry_alerts | Parse Function App hostname and principal id
+  ansible.builtin.set_fact:
+    azure_fedora_function_hostname: "{{ (azure_fedora_function_create.stdout | from_json).defaultHostName }}"
+    azure_fedora_function_principal_id: >-
+      {{ (azure_fedora_function_create.stdout | from_json).identity.principalId }}
+  when: azure_fedora_function_create.stdout | length > 0
+
+- name: azure_fedora_foundry_alerts | Stage function package
+  ansible.builtin.tempfile:
+    state: directory
+    prefix: foundry-fn-
+  register: azure_fedora_fn_staging
+
+- name: azure_fedora_foundry_alerts | Copy function source into staging directory
+  ansible.builtin.copy:
+    src: "{{ role_path }}/files/function_bridge/"
+    dest: "{{ azure_fedora_fn_staging.path }}/"
+    mode: preserve
+
+- name: azure_fedora_foundry_alerts | Zip function package
+  community.general.archive:
+    path: "{{ azure_fedora_fn_staging.path }}/"
+    dest: "{{ azure_fedora_fn_staging.path }}.zip"
+    format: zip
+
+- name: azure_fedora_foundry_alerts | Deploy function code
+  ansible.builtin.command:
+    cmd: >-
+      az functionapp deployment source config-zip
+      --resource-group {{ azure_fedora_deploy_rg }}
+      --name {{ azure_fedora_function_name }}
+      --src {{ azure_fedora_fn_staging.path }}.zip
+  register: azure_fedora_function_deploy
+  changed_when: azure_fedora_function_deploy.rc == 0
+
+- name: azure_fedora_foundry_alerts | Configure Function App settings for Foundry
+  ansible.builtin.command:
+    cmd: >-
+      az functionapp config appsettings set
+      --resource-group {{ azure_fedora_deploy_rg }}
+      --name {{ azure_fedora_function_name }}
+      --settings
+      FOUNDRY_PROJECT_ENDPOINT={{ foundry_project_endpoint }}
+      FOUNDRY_AGENT_NAME={{ foundry_agent_name }}
+      FOUNDRY_RESPONSES_API_VERSION={{ azure_fedora_responses_api_version }}
+  register: azure_fedora_function_settings
+  changed_when: azure_fedora_function_settings.rc == 0
+  no_log: true
+
+- name: azure_fedora_foundry_alerts | Grant Function MI access to Foundry (Cognitive Services User)
+  ansible.builtin.command:
+    cmd: >-
+      az role assignment create
+      --assignee {{ azure_fedora_function_principal_id }}
+      --role "Cognitive Services User"
+      --scope /subscriptions/{{ foundry_sub }}/resourceGroups/{{ foundry_rg }}/providers/Microsoft.CognitiveServices/accounts/{{ foundry_account }}
+  register: azure_fedora_function_rbac
+  changed_when: "'already exists' not in (azure_fedora_function_rbac.stderr | default('') | lower)"
+  failed_when:
+    - azure_fedora_function_rbac.rc != 0
+    - "'already exists' not in (azure_fedora_function_rbac.stderr | default('') | lower)"
+
+- name: azure_fedora_foundry_alerts | Get Function host key for webhook
+  ansible.builtin.command:
+    cmd: >-
+      az functionapp keys list
+      --resource-group {{ azure_fedora_deploy_rg }}
+      --name {{ azure_fedora_function_name }}
+      --query functionKeys.default -o tsv
+  register: azure_fedora_function_key
+  changed_when: false
+  no_log: true
+
+- name: azure_fedora_foundry_alerts | Build alert webhook URL
+  ansible.builtin.set_fact:
+    azure_fedora_webhook_url: >-
+      https://{{ azure_fedora_function_hostname }}/api/AlertToFoundry?code={{ azure_fedora_function_key.stdout | trim }}
+  no_log: true

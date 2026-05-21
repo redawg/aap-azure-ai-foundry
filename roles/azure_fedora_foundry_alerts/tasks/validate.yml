@@ -1,0 +1,29 @@
+---
+- name: azure_fedora_foundry_alerts | Require Azure CLI
+  ansible.builtin.command:
+    cmd: az version
+  register: azure_fedora_az_version
+  changed_when: false
+  failed_when: azure_fedora_az_version.rc != 0
+
+- name: azure_fedora_foundry_alerts | Require active az login
+  ansible.builtin.command:
+    cmd: az account show
+  register: azure_fedora_az_account
+  changed_when: false
+  failed_when: azure_fedora_az_account.rc != 0
+
+- name: azure_fedora_foundry_alerts | Derive Foundry project endpoint
+  when: foundry_project_endpoint | length == 0
+  ansible.builtin.set_fact:
+    foundry_project_endpoint: >-
+      https://{{ foundry_account }}.services.ai.azure.com/api/projects/{{ foundry_project }}
+
+- name: azure_fedora_foundry_alerts | Normalize storage account name (3–24 lowercase alphanumeric)
+  ansible.builtin.set_fact:
+    azure_fedora_storage_name_safe: >-
+      {{
+        (azure_fedora_storage_name | lower | regex_replace('[^a-z0-9]', ''))[:24]
+        if (azure_fedora_storage_name | lower | regex_replace('[^a-z0-9]', '')) | length >= 3
+        else (azure_fedora_name_prefix | lower | regex_replace('[^a-z0-9]', ''))[:20] ~ 'stg'
+      }}

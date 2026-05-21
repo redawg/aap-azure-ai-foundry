@@ -34,6 +34,7 @@ Workshop Foundry project endpoint (example):
 | [`playbooks/mcp-list-job-templates.yml`](playbooks/mcp-list-job-templates.yml) | Templates via MCP |
 | [`playbooks/openshift-mcp-routes.yml`](playbooks/openshift-mcp-routes.yml) | `oc` MCP CRs and routes |
 | [`playbooks/install-local-tools.yml`](playbooks/install-local-tools.yml) | Install `oc` to `~/bin` |
+| [`playbooks/azure-fedora-alerts.yml`](playbooks/azure-fedora-alerts.yml) | Fedora VM on Azure + Monitor alerts → Foundry copilot agent |
 
 ### Tags (`site.yml`)
 
@@ -67,6 +68,23 @@ Scripts in `scripts/` call the playbooks above, for example:
 
 `scripts/workshop-env.sh` still sets `NO_PROXY` for workshop hosts (not Ansible).
 
+## Azure Fedora VM → Foundry alerts
+
+Deploy a **Fedora Linux VM**, an **Azure Monitor** metric alert (CPU), and a **Function App** that forwards the alert payload to your **Foundry agent** (`aap-automation-agent`) via the Responses API.
+
+```bash
+ansible-galaxy collection install -r collections/requirements.yml
+az login
+ansible-playbook playbooks/site.yml          # register agent first
+ansible-playbook playbooks/azure-fedora-alerts.yml
+# optional end-to-end webhook test:
+ansible-playbook playbooks/azure-fedora-alerts.yml -e azure_fedora_test_foundry_invoke=true
+```
+
+Flow: **Metric alert** → **Action group webhook** → **Function `AlertToFoundry`** → **Foundry agent** (recommends AAP job template from alert JSON).
+
+If the Fedora image URN fails in your region, list images with `az vm image list -p FedoraLinux -l <location> -o table` and set `azure_fedora_vm_image`.
+
 ## Roles
 
 | Role | Purpose |
@@ -75,6 +93,7 @@ Scripts in `scripts/` call the playbooks above, for example:
 | `aap_workshop_verify` | Lab health checks |
 | `aap_controller` | List/launch job templates |
 | `local_tools` | Install `oc` locally |
+| `azure_fedora_foundry_alerts` | Fedora VM, Function alert bridge, Monitor → Foundry |
 
 ## Foundry portal (required for MCP auth)
 
