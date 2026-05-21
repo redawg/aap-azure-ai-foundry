@@ -1,0 +1,13 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "terminal.integrated.env.linux": {
+      "NO_PROXY": "127.0.0.1,::1,localhost,.redhatworkshops.io,.rhdp.net,cluster-wg2cd-2.dynamic2.redhatworkshops.io",
+      "no_proxy": "127.0.0.1,::1,localhost,.redhatworkshops.io,.rhdp.net,cluster-wg2cd-2.dynamic2.redhatworkshops.io"
+    }
+  }
+}

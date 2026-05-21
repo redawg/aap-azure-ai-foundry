@@ -19,9 +19,10 @@ aap_password: ""
 aap_mcp_base_url: https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
 aap_mcp_server_path: /mcp
 
+# Full text from scripts/foundry_instructions.py (requires PyYAML on controller)
 foundry_agent_instructions: >-
-  Use Ansible Automation Platform MCP tools for inventories, jobs, and platform
-  configuration. Request approval before write operations.
+  {{ lookup('pipe', 'python3 ' + playbook_dir + '/../scripts/foundry_instructions.py') }}
+foundry_alert_template_map_path: "{{ playbook_dir }}/../config/azure_alert_template_map.yml"
 
 foundry_mcp_toolsets:
   - job_management

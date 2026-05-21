@@ -56,17 +56,28 @@ def main() -> None:
     from azure.ai.projects import AIProjectClient
     from azure.ai.projects.models import PromptAgentDefinition, MCPTool
 
+    from foundry_instructions import build_agent_instructions
+
     credential = DefaultAzureCredential()
     project = AIProjectClient(endpoint=PROJECT_ENDPOINT, credential=credential)
 
-    auth_header = "Basic " + base64.b64encode(f"{AAP_USER}:{AAP_PASSWORD}".encode()).decode()
+    # MCP requires Gateway Bearer token (see scripts/create-aap-gateway-token.sh)
+    import subprocess
 
-    # Key-based auth: store Authorization header for MCP (Basic works; OAuth2 bearer does not).
+    tok = os.environ.get("AAP_GATEWAY_TOKEN", "").strip()
+    if not tok:
+        tok = subprocess.check_output(
+            [os.path.join(os.path.dirname(__file__), "create-aap-gateway-token.sh")],
+            env={**os.environ, "AAP_PASSWORD": AAP_PASSWORD},
+            text=True,
+        ).strip()
+    auth_header = f"Bearer {tok}"
+
     print(f"Creating/updating project connection '{CONNECTION_NAME}'...")
     connection = project.connections.create_or_update(
         name=CONNECTION_NAME,
         api_key={"key": auth_header},
-        metadata={"purpose": "ansible-mcp-basic"},
+        metadata={"purpose": "ansible-mcp-gateway-bearer"},
     )
     print(f"  Connection id: {connection.id}")
 
@@ -82,11 +93,7 @@ def main() -> None:
         agent_name=AGENT_NAME,
         definition=PromptAgentDefinition(
             model=MODEL,
-            instructions=(
-                "You assist with Ansible Automation Platform operations. "
-                "Use MCP tools to list inventories, job templates, and job status. "
-                "Ask for approval before write operations."
-            ),
+            instructions=build_agent_instructions(),
             tools=[tool],
         ),
     )

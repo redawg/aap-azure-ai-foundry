@@ -1,0 +1,22 @@
+{
+  "schemaId": "azureMonitorCommonAlertSchema",
+  "data": {
+    "essentials": {
+      "alertId": "example-mcp-tools-404",
+      "alertRule": "Foundry Agent MCP tool enumeration failed",
+      "severity": "Sev2",
+      "signalType": "Log",
+      "monitorCondition": "Fired",
+      "description": "Playground error while enumerating tools from remote MCP server.",
+      "targetResourceType": "Microsoft.CognitiveServices/accounts",
+      "targetResource": "/subscriptions/9dc2c3d2-35a8-4370-8997-b56a57b5778d/resourceGroups/openenv-wg2cd-1/providers/Microsoft.CognitiveServices/accounts/foundry-wg2cd-1"
+    },
+    "alertContext": {
+      "properties": {
+        "errorMessage": "HTTP 404 (Not Found) while enumerating tools from https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io/mcp — Session not found; Authorization header must be Bearer gateway token.",
+        "project": "foundry-wg2cd-1-project",
+        "agent": "aap-automation-agent"
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+# Map Azure Monitor / Foundry alert signals to AAP job templates (workshop cluster).
+# The agent loads this at registration time; extend for your environment.
+
+templates:
+  - id: 13
+    name: Register AAP MCP with Azure Foundry
+    org: Default
+    use_when:
+      - foundry
+      - mcp
+      - model context protocol
+      - connection
+      - authorization
+      - bearer
+      - deploymentnotfound
+      - enumerating tools
+      - remote mcp server
+      - ai.azure.com
+      - cognitive services
+  - id: 7
+    name: Demo Job Template
+    org: Default
+    use_when:
+      - demo
+      - test
+      - smoke
+      - generic
+      - unknown alert
+      - remediation
+      - health check
+  - id: 9
+    name: APD | Single demo setup
+    org: Ansible Product Demos (APD)
+    use_when:
+      - single host
+      - one vm
+      - single resource
+      - app service
+      - small footprint
+  - id: 10
+    name: APD | Multi-demo setup
+    org: Ansible Product Demos (APD)
+    use_when:
+      - multiple hosts
+      - scale set
+      - vmss
+      - cluster
+      - aks
+      - multi-resource
+      - bulk
+
+alert_field_hints:
+  - alertRuleName
+  - alertRuleDescription
+  - severity
+  - signalType
+  - monitorCondition
+  - resourceId
+  - resourceType
+  - operationName
+  - properties.errorMessage
+  - properties.message
+  - essentials.alertRule
+  - essentials.description
