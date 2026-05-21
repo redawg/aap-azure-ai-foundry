@@ -9,7 +9,9 @@ description: >-
 
 # gpt-4.1 + AAP MCP
 
-**Foundry agent instructions** live in [`config/foundry_agent_aap_mcp_skill.md`](../../config/foundry_agent_aap_mcp_skill.md) and are published via `scripts/foundry_instructions.py` → `playbooks/update-agent-instructions.yml`. Edit that file to change what **gpt-4.1** sees in Playground.
+**AI reference (read first):** [`docs/AAP-MCP-AI-REFERENCE.md`](../../docs/AAP-MCP-AI-REFERENCE.md) — auth, JSON-RPC, SSE, tools, errors.
+
+**Foundry agent instructions** live in [`config/foundry_agent_aap_mcp_skill.md`](../../config/foundry_agent_aap_mcp_skill.md) and are published via `scripts/foundry_instructions.py` → `playbooks/update-agent-instructions.yml`.
 
 ## Foundry agent (Playground)
 

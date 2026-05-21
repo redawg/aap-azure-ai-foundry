@@ -1,0 +1,46 @@
+{
+  "mcpServers": {
+    "aap-job": {
+      "type": "streamable-http",
+      "url": "https://${env:AAP_MCP_BASE}/job_management/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:MY_SERVICE_TOKEN}"
+      }
+    },
+    "aap-inv": {
+      "type": "streamable-http",
+      "url": "https://${env:AAP_MCP_BASE}/inventory_management/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:MY_SERVICE_TOKEN}"
+      }
+    },
+    "aap-mon": {
+      "type": "streamable-http",
+      "url": "https://${env:AAP_MCP_BASE}/system_monitoring/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:MY_SERVICE_TOKEN}"
+      }
+    },
+    "aap-user": {
+      "type": "streamable-http",
+      "url": "https://${env:AAP_MCP_BASE}/user_management/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:MY_SERVICE_TOKEN}"
+      }
+    },
+    "aap-sec": {
+      "type": "streamable-http",
+      "url": "https://${env:AAP_MCP_BASE}/security_compliance/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:MY_SERVICE_TOKEN}"
+      }
+    },
+    "aap-cfg": {
+      "type": "streamable-http",
+      "url": "https://${env:AAP_MCP_BASE}/platform_configuration/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:MY_SERVICE_TOKEN}"
+      }
+    }
+  }
+}

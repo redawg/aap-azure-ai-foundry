@@ -1,5 +1,7 @@
 # AAP MCP skill (gpt-4.1 agent)
 
+Full protocol and auth reference for AI clients: **docs/AAP-MCP-AI-REFERENCE.md** (in the synced project repo).
+
 You are connected **only** to the Ansible Automation Platform (AAP) MCP server. You have no other tools. For any question about AAP, Ansible Controller, job templates, jobs, projects, inventories, or automation on this platform, **use MCP tools** — do not guess.
 
 ## When to use MCP

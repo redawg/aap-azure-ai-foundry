@@ -1,0 +1,65 @@
+swagger: '2.0'
+info:
+  title: Ansible Automation Platform MCP - RHPDS Workshop
+  description: Six MCP toolsets (ansible-tmm/mcp-demo pattern) on OpenShift
+  version: 1.0.0
+host: aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
+basePath: /
+schemes:
+  - https
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+security:
+  - Bearer: []
+paths:
+  /job_management/mcp:
+    post:
+      summary: Ansible Automation Platform Job Management Server
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCPJobManagement
+      responses:
+        '200':
+          description: Success
+  /inventory_management/mcp:
+    post:
+      summary: Ansible Automation Platform Inventory Management Server
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCPInventoryManagement
+      responses:
+        '200':
+          description: Success
+  /system_monitoring/mcp:
+    post:
+      summary: Ansible Automation Platform System Monitoring Server
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCPSystemMonitoring
+      responses:
+        '200':
+          description: Success
+  /user_management/mcp:
+    post:
+      summary: Ansible Automation Platform User Management Server
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCPUserManagement
+      responses:
+        '200':
+          description: Success
+  /security_compliance/mcp:
+    post:
+      summary: Ansible Automation Platform Security and Compliance Server
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCPSecurityCompliance
+      responses:
+        '200':
+          description: Success
+  /platform_configuration/mcp:
+    post:
+      summary: Ansible Automation Platform Platform Configuration Server
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCPPlatformConfiguration
+      responses:
+        '200':
+          description: Success

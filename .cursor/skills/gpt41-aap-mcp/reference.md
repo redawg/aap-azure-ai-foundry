@@ -1,5 +1,7 @@
 # AAP MCP reference (workshop)
 
+> **Canonical doc:** [docs/AAP-MCP-AI-REFERENCE.md](../../docs/AAP-MCP-AI-REFERENCE.md) — use that for full protocol, auth, and tool guidance for AI models.
+
 ## Endpoints
 
 | Service | URL |

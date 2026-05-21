@@ -36,11 +36,25 @@ On the workshop cluster, MCP exposes **`projects_list`** but not **`projects_cre
 | Hub / Galaxy API token | [automation-hub/token](https://console.redhat.com/ansible/automation-hub/token) | [`docs/REDHAT-CONSOLE-CREDENTIALS.md`](docs/REDHAT-CONSOLE-CREDENTIALS.md), [`playbooks/aap-redhat-galaxy-credential.yml`](playbooks/aap-redhat-galaxy-credential.yml) |
 | Analytics service account | [iam/service-accounts](https://console.redhat.com/iam/service-accounts) | Same doc, [`playbooks/aap-redhat-analytics-service-account.yml`](playbooks/aap-redhat-analytics-service-account.yml) |
 
+## Copilot / MCP without Foundry
+
+Follows **[ansible-tmm/mcp-demo](https://github.com/ansible-tmm/mcp-demo/tree/main)** (six toolset endpoints).
+
+| Path | Directory |
+|------|-----------|
+| **Cursor IDE** (streamable-http, 6 toolsets) | [`mcp-demo/cursor-mcp-setup/`](mcp-demo/cursor-mcp-setup/README.md) |
+| **Microsoft Copilot Studio** (OpenAPI connector) | [`copilotstudio/`](copilotstudio/README.md) |
+| **GitHub Copilot SDK** (HTTP MCP) | [`copilot-aap-agent/`](copilot-aap-agent/README.md) |
+| **Overview** | [`mcp-demo/README.md`](mcp-demo/README.md) |
+
+Foundry registration (`playbooks/site.yml`) is optional and not required for these paths.
+
 ## Cursor skill
 
 | Artifact | Purpose |
 |----------|---------|
-| [`config/foundry_agent_aap_mcp_skill.md`](config/foundry_agent_aap_mcp_skill.md) | **Foundry gpt-4.1 agent** system instructions (AAP MCP tool usage) |
+| [`docs/AAP-MCP-AI-REFERENCE.md`](docs/AAP-MCP-AI-REFERENCE.md) | **Canonical reference for AI models** — auth, protocol, tools, errors, Foundry |
+| [`config/foundry_agent_aap_mcp_skill.md`](config/foundry_agent_aap_mcp_skill.md) | **Foundry gpt-4.1 agent** system instructions (short; links to reference) |
 | [`.cursor/skills/gpt41-aap-mcp/`](.cursor/skills/gpt41-aap-mcp/SKILL.md) | **Cursor IDE** skill (same workflow + repo commands) |
 
 Publish skill to Foundry: `ansible-playbook playbooks/update-agent-instructions.yml -e @group_vars/all.yml`
