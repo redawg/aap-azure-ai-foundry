@@ -1,3 +1,18 @@
+# Fix Foundry MCP errors (404 / 500 while enumerating tools)
+
+## HTTP 500 from Foundry (MCP is healthy)
+
+If terminal checks pass (`python3 scripts/aap_mcp_or_navigator.py list-job-templates`) but **Playground** shows **500** while enumerating tools:
+
+1. **Portal secret missing or stale** — ARM GET shows `credentials: null`; you must set the secret in the UI (not only via ARM). Re-save **aap-mcp-bearer** with a fresh Gateway token.
+2. **Too many tools** — Unified `/mcp` returns ~100+ tools (~190KB SSE). Foundry may fail on large `tools/list`. Use **`/job_management/mcp`** on the agent instead (job templates + jobs only).
+3. **Wrong custom key** — Key name must be `Authorization`, value `Bearer <token>` (not `Value`, not double `Bearer Bearer`).
+4. **Connection target** — Target must be `_`, not the full MCP URL.
+
+After changing the agent MCP URL, create a **new agent version** in Playground or re-open the agent so it loads the latest version.
+
+---
+
 # Fix Foundry MCP "HTTP 404 while enumerating tools"
 
 ## What the error really means
