@@ -1,6 +1,16 @@
+# Environment and credentials
 .env
 creds.md
 group_vars/all.yml
+
+# Python
 .venv/
 __pycache__/
 *.pyc
+
+# Generated artifacts (contain credentials)
+copilot-setup-artifacts/
+COPILOT-SETUP-SUMMARY.md
+
+# Mac
+.DS_Store

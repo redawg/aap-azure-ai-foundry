@@ -1,0 +1,385 @@
+---
+# Prepare artifacts for manual Copilot Studio setup
+# Use this if the automated API approach doesn't work
+- name: Prepare AAP MCP artifacts for Copilot Studio
+  hosts: localhost
+  gather_facts: true
+  vars_files:
+    - ../group_vars/all.yml
+  vars:
+    output_dir: "../copilot-setup-artifacts"
+    openapi_file: "../aap-mcp-openapi.yaml"
+
+  tasks:
+    - name: Create output directory
+      ansible.builtin.file:
+        path: "{{ output_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Read OpenAPI specification
+      ansible.builtin.slurp:
+        path: "{{ openapi_file }}"
+      register: openapi_content
+
+    - name: Parse OpenAPI spec
+      ansible.builtin.set_fact:
+        openapi_spec: "{{ openapi_content.content | b64decode | from_yaml }}"
+
+    - name: Generate Basic Auth token
+      ansible.builtin.set_fact:
+        basic_auth_token: "{{ (aap_user + ':' + aap_password) | b64encode }}"
+
+    - name: Copy OpenAPI file to artifacts directory
+      ansible.builtin.copy:
+        src: "{{ openapi_file }}"
+        dest: "{{ output_dir }}/aap-mcp-openapi.yaml"
+        mode: '0644'
+
+    - name: Create setup instructions file
+      ansible.builtin.copy:
+        dest: "{{ output_dir }}/SETUP-INSTRUCTIONS.txt"
+        mode: '0644'
+        content: |
+          ═══════════════════════════════════════════════════════════════════════════════
+          AAP MCP → Microsoft Copilot Studio Setup Instructions
+          ═══════════════════════════════════════════════════════════════════════════════
+
+          Generated: {{ ansible_date_time.iso8601 }}
+
+          STEP 1: CREATE CUSTOM CONNECTOR
+          ────────────────────────────────────────────────────────────────────────────
+
+          1. Navigate to Power Apps:
+             https://make.powerapps.com
+
+          2. In left navigation, select: Custom connectors
+
+          3. Click: + New custom connector → Import an OpenAPI file
+
+          4. Connector name: AAP-MCP-Connector
+
+          5. Upload file: aap-mcp-openapi.yaml (in this directory)
+
+          6. Click: Continue
+
+
+          STEP 2: CONFIGURE CONNECTOR
+          ────────────────────────────────────────────────────────────────────────────
+
+          General Tab (verify auto-populated):
+            • Host: {{ openapi_spec.host }}
+            • Base URL: {{ openapi_spec.basePath }}
+            • Scheme: HTTPS
+
+          Security Tab (configure):
+            • Authentication type: API Key
+            • Parameter label: Authorization
+            • Parameter name: Authorization
+            • Parameter location: Header
+
+          Definition Tab:
+            • Review the three operations:
+              - InvokeMCPJobManagement
+              - InvokeMCPInventoryManagement
+              - InvokeMCPSystemMonitoring
+
+          7. Click: Create connector (bottom right)
+
+
+          STEP 3: CREATE CONNECTION
+          ────────────────────────────────────────────────────────────────────────────
+
+          8. After connector is created, go to: Test tab
+
+          9. Click: + New connection
+
+          10. In Authorization field, enter EXACTLY:
+
+              Basic {{ basic_auth_token }}
+
+              ⚠️  CRITICAL: Include "Basic " prefix with a space!
+
+          11. Click: Create connection
+
+
+          STEP 4: TEST CONNECTION
+          ────────────────────────────────────────────────────────────────────────────
+
+          12. On Test tab, select your new connection
+
+          13. Choose an operation (e.g., InvokeMCPJobManagement)
+
+          14. Click: Test operation
+
+          15. Expected result: 200 OK response
+
+
+          STEP 5: ADD TO COPILOT STUDIO
+          ────────────────────────────────────────────────────────────────────────────
+
+          16. Navigate to Copilot Studio:
+              https://copilotstudio.microsoft.com
+
+          17. Open your Copilot agent
+
+          18. Go to: Tools
+
+          19. Click: + Add a tool
+
+          20. Select: Custom connector
+
+          21. Find: AAP-MCP-Connector
+
+          22. Choose the connection you created
+
+          23. Click: Add
+
+
+          ═══════════════════════════════════════════════════════════════════════════════
+          CONFIGURATION DETAILS
+          ═══════════════════════════════════════════════════════════════════════════════
+
+          AAP MCP Server:
+            Host: {{ openapi_spec.host }}
+            Base URL: {{ openapi_spec.basePath }}
+            Scheme: HTTPS
+
+          Authentication:
+            Type: Basic Authentication
+            Username: {{ aap_user }}
+            Password: {{ aap_password }}
+            Base64 Token: {{ basic_auth_token }}
+            Full Header: Basic {{ basic_auth_token }}
+
+          Endpoints:
+            • /job_management/mcp
+            • /inventory_management/mcp
+            • /system_monitoring/mcp
+
+          ═══════════════════════════════════════════════════════════════════════════════
+          TROUBLESHOOTING
+          ═══════════════════════════════════════════════════════════════════════════════
+
+          401 Unauthorized:
+            → Check Authorization header includes "Basic " prefix
+            → Verify credentials are correct
+            → Ensure token is properly base64 encoded
+
+          404 Not Found:
+            → MCP endpoints may use different paths
+            → Test endpoint directly: curl -sk -I https://{{ openapi_spec.host }}/mcp
+
+          SSL/TLS Errors:
+            → Ensure MCP server has valid SSL certificate
+            → Self-signed certificates will not work with Power Platform
+
+          Connection Test Fails:
+            → Verify MCP server is accessible from internet
+            → Check firewall/network rules
+            → Review MCP server logs
+
+          ═══════════════════════════════════════════════════════════════════════════════
+          TESTING
+          ═══════════════════════════════════════════════════════════════════════════════
+
+          Test MCP server directly:
+
+            curl -sk -X POST https://{{ openapi_spec.host }}/job_management/mcp \
+              -H "Authorization: Basic {{ basic_auth_token }}" \
+              -H "Content-Type: application/json"
+
+          Test with MCP initialize:
+
+            curl -sk -X POST https://{{ openapi_spec.host }}/mcp \
+              -H "Authorization: Basic {{ basic_auth_token }}" \
+              -H "Content-Type: application/json" \
+              -d '{"jsonrpc":"2.0","method":"initialize","params":{},"id":1}'
+
+          ═══════════════════════════════════════════════════════════════════════════════
+          RESOURCES
+          ═══════════════════════════════════════════════════════════════════════════════
+
+          • Power Apps: https://make.powerapps.com
+          • Copilot Studio: https://copilotstudio.microsoft.com
+          • Setup Guide: ../docs/COPILOT-STUDIO-SETUP.md
+          • GitHub Reference: https://github.com/ansible-tmm/mcp-demo/tree/main/copilotstudio-mcp-setup
+
+          ═══════════════════════════════════════════════════════════════════════════════
+
+    - name: Create PowerShell setup script (alternative automation)
+      ansible.builtin.copy:
+        dest: "{{ output_dir }}/setup-connector.ps1"
+        mode: '0755'
+        content: |
+          # PowerShell script to create AAP MCP Custom Connector
+          # Requires: Power Platform PowerShell modules
+
+          # Install required modules (run once)
+          # Install-Module -Name Microsoft.PowerApps.Administration.PowerShell -Scope CurrentUser
+          # Install-Module -Name Microsoft.PowerApps.PowerShell -Scope CurrentUser
+
+          # Configuration
+          $ConnectorName = "AAP-MCP-Connector"
+          $ConnectorDisplayName = "Ansible Automation Platform MCP"
+          $OpenApiFile = "aap-mcp-openapi.yaml"
+          $AuthToken = "Basic {{ basic_auth_token }}"
+
+          Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Cyan
+          Write-Host "AAP MCP Custom Connector Setup" -ForegroundColor Cyan
+          Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Cyan
+          Write-Host ""
+
+          # Authenticate to Power Platform
+          Write-Host "Step 1: Authenticate to Power Platform" -ForegroundColor Yellow
+          Add-PowerAppsAccount
+
+          # Get environment
+          Write-Host "Step 2: Select Power Platform environment" -ForegroundColor Yellow
+          $Environments = Get-AdminPowerAppEnvironment
+          $Environments | Format-Table -Property DisplayName, EnvironmentName
+
+          if ($Environments.Count -eq 1) {
+              $EnvironmentName = $Environments[0].EnvironmentName
+              Write-Host "Using environment: $($Environments[0].DisplayName)" -ForegroundColor Green
+          } else {
+              $EnvironmentName = Read-Host "Enter environment name"
+          }
+
+          # Read OpenAPI spec
+          Write-Host "Step 3: Read OpenAPI specification" -ForegroundColor Yellow
+          if (Test-Path $OpenApiFile) {
+              $OpenApiContent = Get-Content $OpenApiFile -Raw
+              Write-Host "✓ OpenAPI file loaded" -ForegroundColor Green
+          } else {
+              Write-Host "✗ OpenAPI file not found: $OpenApiFile" -ForegroundColor Red
+              exit 1
+          }
+
+          Write-Host ""
+          Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Cyan
+          Write-Host "Manual Steps Required" -ForegroundColor Cyan
+          Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Cyan
+          Write-Host ""
+          Write-Host "PowerShell modules have limited support for Custom Connectors." -ForegroundColor Yellow
+          Write-Host "Please complete the setup manually:" -ForegroundColor Yellow
+          Write-Host ""
+          Write-Host "1. Navigate to: https://make.powerapps.com" -ForegroundColor White
+          Write-Host "2. Go to: Custom connectors" -ForegroundColor White
+          Write-Host "3. Import OpenAPI file: $OpenApiFile" -ForegroundColor White
+          Write-Host "4. Configure authentication (see SETUP-INSTRUCTIONS.txt)" -ForegroundColor White
+          Write-Host "5. Create connection with token:" -ForegroundColor White
+          Write-Host "   $AuthToken" -ForegroundColor Cyan
+          Write-Host ""
+          Write-Host "Full instructions: SETUP-INSTRUCTIONS.txt" -ForegroundColor Green
+          Write-Host ""
+
+    - name: Create quick reference card
+      ansible.builtin.copy:
+        dest: "{{ output_dir }}/QUICK-REFERENCE.txt"
+        mode: '0644'
+        content: |
+          ╔═══════════════════════════════════════════════════════════════════════════╗
+          ║                   AAP MCP → Copilot Studio                                ║
+          ║                        Quick Reference                                    ║
+          ╚═══════════════════════════════════════════════════════════════════════════╝
+
+          🔗 LINKS
+          ─────────────────────────────────────────────────────────────────────────────
+          Power Apps:       https://make.powerapps.com
+          Copilot Studio:   https://copilotstudio.microsoft.com
+
+          📁 FILES
+          ─────────────────────────────────────────────────────────────────────────────
+          OpenAPI Spec:     aap-mcp-openapi.yaml
+          Instructions:     SETUP-INSTRUCTIONS.txt
+          PowerShell:       setup-connector.ps1
+
+          🔐 AUTHENTICATION
+          ─────────────────────────────────────────────────────────────────────────────
+          Type:             API Key
+          Location:         Header
+          Parameter Name:   Authorization
+          Value:            Basic {{ basic_auth_token }}
+
+          ⚠️  IMPORTANT: Include "Basic " prefix with space!
+
+          🎯 KEY SETTINGS
+          ─────────────────────────────────────────────────────────────────────────────
+          Host:             {{ openapi_spec.host }}
+          Base URL:         {{ openapi_spec.basePath }}
+          Scheme:           HTTPS
+          Auth Type:        API Key in Header
+
+          🧪 TEST COMMAND
+          ─────────────────────────────────────────────────────────────────────────────
+          curl -sk -X POST https://{{ openapi_spec.host }}/mcp \
+            -H "Authorization: Basic {{ basic_auth_token }}" \
+            -H "Content-Type: application/json"
+
+          ╚═══════════════════════════════════════════════════════════════════════════╝
+
+    - name: Create README for artifacts
+      ansible.builtin.copy:
+        dest: "{{ output_dir }}/README.md"
+        mode: '0644'
+        content: |
+          # AAP MCP → Copilot Studio Setup Artifacts
+
+          This directory contains everything you need to set up the AAP MCP integration with Microsoft Copilot Studio.
+
+          ## Files
+
+          | File | Description |
+          |------|-------------|
+          | `aap-mcp-openapi.yaml` | OpenAPI specification for AAP MCP Custom Connector |
+          | `SETUP-INSTRUCTIONS.txt` | Step-by-step setup instructions |
+          | `QUICK-REFERENCE.txt` | Quick reference card with key details |
+          | `setup-connector.ps1` | PowerShell script (alternative automation) |
+
+          ## Quick Start
+
+          1. Read `SETUP-INSTRUCTIONS.txt` for complete step-by-step guide
+          2. Go to https://make.powerapps.com
+          3. Import `aap-mcp-openapi.yaml` as a Custom Connector
+          4. Configure authentication with the token from SETUP-INSTRUCTIONS.txt
+          5. Add to your Copilot Studio agent
+
+          ## Authentication Token
+
+          The Basic auth token is included in all instruction files. Copy it exactly as shown, including the "Basic " prefix.
+
+          ## Support
+
+          For detailed documentation, see:
+          - `../docs/COPILOT-STUDIO-SETUP.md` - Full setup guide
+          - `../COPILOT-SETUP-QUICK-REF.md` - Quick reference
+
+          Generated: {{ ansible_date_time.iso8601 }}
+
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg:
+          - ""
+          - "═══════════════════════════════════════════════════════════════════════"
+          - "  Setup artifacts created successfully!"
+          - "═══════════════════════════════════════════════════════════════════════"
+          - ""
+          - "Location: {{ output_dir }}"
+          - ""
+          - "Files created:"
+          - "  • aap-mcp-openapi.yaml - OpenAPI specification"
+          - "  • SETUP-INSTRUCTIONS.txt - Step-by-step guide"
+          - "  • QUICK-REFERENCE.txt - Quick reference card"
+          - "  • setup-connector.ps1 - PowerShell script"
+          - "  • README.md - Overview"
+          - ""
+          - "Next steps:"
+          - "  1. cd {{ output_dir }}"
+          - "  2. Review SETUP-INSTRUCTIONS.txt"
+          - "  3. Follow the steps to create Custom Connector"
+          - ""
+          - "Authorization token: Basic {{ basic_auth_token }}"
+          - ""
+          - "═══════════════════════════════════════════════════════════════════════"
+          - ""

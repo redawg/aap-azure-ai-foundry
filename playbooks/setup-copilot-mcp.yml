@@ -1,0 +1,343 @@
+---
+# Automate AAP MCP Custom Connector creation in Power Platform for Copilot Studio
+# Requires: Azure login, Power Platform API access
+- name: Setup AAP MCP in Microsoft Copilot Studio
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../group_vars/all.yml
+  vars:
+    # Azure and Power Platform settings
+    power_platform_environment: "{{ lookup('env', 'POWER_PLATFORM_ENV') | default('', true) }}"
+    power_platform_region: "{{ lookup('env', 'POWER_PLATFORM_REGION') | default('unitedstates', true) }}"
+
+    # Custom Connector settings
+    connector_name: "AAP-MCP-Connector"
+    connector_display_name: "Ansible Automation Platform MCP"
+    connector_description: "MCP server for managing Ansible Automation Platform"
+    openapi_file: "../aap-mcp-openapi.yaml"
+
+    # AAP MCP settings from group_vars
+    aap_mcp_host: "{{ aap_mcp_base_url | regex_replace('^https?://', '') | regex_replace('/.*$', '') }}"
+    aap_auth_user: "{{ aap_user }}"
+    aap_auth_password: "{{ aap_password }}"
+
+    # Copilot Studio agent settings
+    copilot_agent_name: "{{ copilot_agent_name | default('', true) }}"
+    auto_add_to_agent: "{{ auto_add_to_copilot | default(false) }}"
+
+  tasks:
+    - name: Verify prerequisites
+      block:
+        - name: Check if OpenAPI file exists
+          ansible.builtin.stat:
+            path: "{{ openapi_file }}"
+          register: openapi_stat
+          failed_when: not openapi_stat.stat.exists
+
+        - name: Read OpenAPI specification
+          ansible.builtin.slurp:
+            path: "{{ openapi_file }}"
+          register: openapi_content
+
+        - name: Parse OpenAPI YAML
+          ansible.builtin.set_fact:
+            openapi_spec: "{{ openapi_content.content | b64decode | from_yaml }}"
+
+        - name: Generate Basic Auth token
+          ansible.builtin.set_fact:
+            basic_auth_token: "{{ (aap_auth_user + ':' + aap_auth_password) | b64encode }}"
+
+        - name: Display setup information
+          ansible.builtin.debug:
+            msg:
+              - "Connector Name: {{ connector_display_name }}"
+              - "AAP MCP Host: {{ openapi_spec.host }}"
+              - "Auth Method: Basic Authentication"
+              - "OpenAPI Version: {{ openapi_spec.swagger }}"
+
+    - name: Authenticate to Azure and Power Platform
+      block:
+        - name: Check Azure login status
+          ansible.builtin.command:
+            cmd: az account show
+          register: az_account
+          changed_when: false
+          failed_when: false
+
+        - name: Prompt for Azure login if not authenticated
+          ansible.builtin.fail:
+            msg: |
+              Not logged into Azure. Please run: az login
+              Then set your subscription: az account set --subscription {{ lookup('env', 'AZ_SUBSCRIPTION_ID') | default('YOUR_SUBSCRIPTION_ID') }}
+          when: az_account.rc != 0
+
+        - name: Get access token for BAP (Business Application Platform)
+          ansible.builtin.command:
+            cmd: az account get-access-token --resource https://api.bap.microsoft.com/ --query accessToken -o tsv
+          register: power_platform_token
+          changed_when: false
+
+        - name: Get access token for Power Apps
+          ansible.builtin.command:
+            cmd: az account get-access-token --resource https://service.powerapps.com/ --query accessToken -o tsv
+          register: powerapps_token
+          changed_when: false
+
+      rescue:
+        - name: Authentication failed
+          ansible.builtin.fail:
+            msg: |
+              Failed to authenticate to Power Platform.
+              Please ensure you have:
+              1. Azure CLI installed and logged in (az login)
+              2. Access to Power Platform in your subscription
+              3. Appropriate permissions to create connectors
+
+    - name: Discover Power Platform environment
+      block:
+        - name: List Power Platform environments (if env not specified)
+          ansible.builtin.uri:
+            url: "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2020-10-01"
+            method: GET
+            headers:
+              Authorization: "Bearer {{ power_platform_token.stdout }}"
+              Content-Type: "application/json"
+          register: environments_response
+          when: power_platform_environment == ''
+
+        - name: Extract environment info
+          ansible.builtin.set_fact:
+            available_environments: "{{ environments_response.json.value | default([]) }}"
+          when: power_platform_environment == ''
+
+        - name: Display available environments
+          ansible.builtin.debug:
+            msg: "{{ item.name }} - {{ item.properties.displayName | default('N/A') }}"
+          loop: "{{ available_environments }}"
+          when:
+            - power_platform_environment == ''
+            - available_environments | length > 0
+
+        - name: Use first environment if not specified
+          ansible.builtin.set_fact:
+            power_platform_environment: "{{ available_environments[0].name }}"
+          when:
+            - power_platform_environment == ''
+            - available_environments | length > 0
+
+        - name: Check if environment is set
+          ansible.builtin.fail:
+            msg: |
+              No Power Platform environment found or specified.
+              Please set POWER_PLATFORM_ENV environment variable or pass as extra var:
+              -e power_platform_environment=YOUR_ENV_NAME
+          when: power_platform_environment == ''
+
+        - name: Display selected environment
+          ansible.builtin.debug:
+            msg: "Using Power Platform environment: {{ power_platform_environment }}"
+
+    - name: Create Custom Connector in Power Platform
+      block:
+        - name: Convert OpenAPI spec to Custom Connector format
+          ansible.builtin.set_fact:
+            connector_payload:
+              properties:
+                displayName: "{{ connector_display_name }}"
+                description: "{{ connector_description }}"
+                iconUri: "https://www.redhat.com/favicon.ico"
+                iconBrandColor: "#EE0000"
+                apiDefinitions:
+                  swagger:
+                    swagger: "{{ openapi_spec.swagger }}"
+                    info: "{{ openapi_spec.info }}"
+                    host: "{{ openapi_spec.host }}"
+                    basePath: "{{ openapi_spec.basePath }}"
+                    schemes: "{{ openapi_spec.schemes }}"
+                    securityDefinitions: "{{ openapi_spec.securityDefinitions }}"
+                    security: "{{ openapi_spec.security }}"
+                    paths: "{{ openapi_spec.paths }}"
+                connectionParameters:
+                  api_key:
+                    type: "securestring"
+                    uiDefinition:
+                      displayName: "Authorization Header"
+                      description: "Enter: Basic {base64_encoded_credentials}"
+                      tooltip: "Format: Basic {base64(username:password)}"
+                      constraints:
+                        required: "true"
+
+        - name: Create or update Custom Connector
+          ansible.builtin.uri:
+            url: "https://api.powerapps.com/providers/Microsoft.PowerApps/apis/{{ connector_name }}?api-version=2016-11-01&$filter=environment eq '{{ power_platform_environment }}'"
+            method: PUT
+            headers:
+              Authorization: "Bearer {{ powerapps_token.stdout }}"
+              Content-Type: "application/json"
+            body: "{{ connector_payload | to_json }}"
+            body_format: json
+            status_code: [200, 201]
+          register: connector_result
+
+        - name: Display connector creation result
+          ansible.builtin.debug:
+            msg:
+              - "Connector created successfully!"
+              - "Connector ID: {{ connector_result.json.name }}"
+              - "Display Name: {{ connector_result.json.properties.displayName }}"
+
+      rescue:
+        - name: Connector creation failed
+          ansible.builtin.debug:
+            msg: |
+              Failed to create custom connector via API.
+              Error: {{ connector_result.msg | default('Unknown error') }}
+
+              Manual steps:
+              1. Go to: https://make.powerapps.com
+              2. Navigate to: Custom connectors
+              3. Click: + New custom connector → Import an OpenAPI file
+              4. Upload: {{ openapi_file }}
+              5. Configure authentication: API Key, Header, name=Authorization
+
+    - name: Create Connection for the Custom Connector
+      block:
+        - name: Prepare connection payload
+          ansible.builtin.set_fact:
+            connection_name: "{{ connector_name }}-connection"
+            connection_payload:
+              properties:
+                displayName: "{{ connector_display_name }} Connection"
+                api:
+                  id: "/providers/Microsoft.PowerApps/apis/{{ connector_name }}"
+                parameterValues:
+                  api_key: "Basic {{ basic_auth_token }}"
+
+        - name: Create connection
+          ansible.builtin.uri:
+            url: "https://api.powerapps.com/providers/Microsoft.PowerApps/connections/{{ connection_name }}?api-version=2016-11-01&$filter=environment eq '{{ power_platform_environment }}'"
+            method: PUT
+            headers:
+              Authorization: "Bearer {{ powerapps_token.stdout }}"
+              Content-Type: "application/json"
+            body: "{{ connection_payload | to_json }}"
+            body_format: json
+            status_code: [200, 201]
+          register: connection_result
+
+        - name: Display connection result
+          ansible.builtin.debug:
+            msg:
+              - "Connection created successfully!"
+              - "Connection ID: {{ connection_result.json.name }}"
+              - "Status: {{ connection_result.json.properties.statuses[0].status | default('Created') }}"
+
+      rescue:
+        - name: Connection creation failed
+          ansible.builtin.debug:
+            msg: |
+              Failed to create connection via API.
+              Error: {{ connection_result.msg | default('Unknown error') }}
+
+              Manual steps:
+              1. Go to: https://make.powerapps.com
+              2. Navigate to: Connections
+              3. Click: + New connection
+              4. Search for: {{ connector_display_name }}
+              5. Enter authorization: Basic {{ basic_auth_token }}
+
+    - name: Add connector to Copilot Studio agent
+      block:
+        - name: Check if Copilot agent name is provided
+          ansible.builtin.fail:
+            msg: "Copilot agent name not provided. Set copilot_agent_name variable or skip this step."
+          when:
+            - auto_add_to_agent
+            - copilot_agent_name == ''
+
+        - name: Add Custom Connector to Copilot agent
+          ansible.builtin.debug:
+            msg: |
+              Copilot Studio agent integration requires manual steps or Microsoft Graph API.
+
+              To add manually:
+              1. Go to: https://copilotstudio.microsoft.com
+              2. Open your agent: {{ copilot_agent_name }}
+              3. Navigate to: Tools
+              4. Click: + Add a tool → Custom connector
+              5. Select: {{ connector_display_name }}
+              6. Choose connection: {{ connection_name }}
+              7. Click: Add
+          when: auto_add_to_agent
+
+      when: copilot_agent_name != ''
+
+    - name: Generate setup summary
+      block:
+        - name: Create summary file
+          ansible.builtin.copy:
+            dest: "../COPILOT-SETUP-SUMMARY.md"
+            content: |
+              # Copilot Studio MCP Setup Summary
+
+              Generated: {{ ansible_date_time.iso8601 }}
+
+              ## Custom Connector Details
+
+              - **Name:** {{ connector_display_name }}
+              - **Connector ID:** {{ connector_name }}
+              - **Environment:** {{ power_platform_environment }}
+              - **AAP MCP Host:** {{ openapi_spec.host }}
+              - **Authentication:** Basic Authentication
+
+              ## Connection Details
+
+              - **Connection Name:** {{ connection_name }}
+              - **Authorization Token:** `Basic {{ basic_auth_token }}`
+              - **Status:** {{ connection_result.json.properties.statuses[0].status | default('Created') if connection_result is defined else 'Pending' }}
+
+              ## Next Steps
+
+              {% if not auto_add_to_agent %}
+              ### Add to Copilot Studio Agent
+
+              1. Navigate to: https://copilotstudio.microsoft.com
+              2. Open your Copilot agent
+              3. Go to: **Tools** → **+ Add a tool**
+              4. Select: **Custom connector**
+              5. Choose: **{{ connector_display_name }}**
+              6. Select connection: **{{ connection_name }}**
+              7. Click: **Add**
+              {% endif %}
+
+              ### Test the Integration
+
+              Test MCP endpoint:
+              ```bash
+              curl -sk -X POST https://{{ openapi_spec.host }}/job_management/mcp \
+                -H "Authorization: Basic {{ basic_auth_token }}" \
+                -H "Content-Type: application/json"
+              ```
+
+              ### Troubleshooting
+
+              - **Power Apps Portal:** https://make.powerapps.com
+              - **Custom Connectors:** https://make.powerapps.com/environments/{{ power_platform_environment }}/customconnectors
+              - **Connections:** https://make.powerapps.com/environments/{{ power_platform_environment }}/connections
+
+              ## Resources
+
+              - **OpenAPI Spec:** {{ openapi_file }}
+              - **Setup Guide:** docs/COPILOT-STUDIO-SETUP.md
+              - **Quick Reference:** COPILOT-SETUP-QUICK-REF.md
+          delegate_to: localhost
+
+        - name: Display summary location
+          ansible.builtin.debug:
+            msg:
+              - "Setup summary saved to: COPILOT-SETUP-SUMMARY.md"
+              - "Power Platform environment: {{ power_platform_environment }}"
+              - "Custom connector: {{ connector_display_name }}"
+              - ""
+              - "Review the summary file for next steps and testing instructions."
