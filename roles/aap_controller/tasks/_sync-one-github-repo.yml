@@ -1,0 +1,109 @@
+---
+- name: aap_controller | Normalize repo SCM URL
+  ansible.builtin.set_fact:
+    aap_repo_scm_url: >-
+      {{
+        aap_github_repo_item.url
+        if aap_github_repo_item.url.endswith('.git')
+        else (aap_github_repo_item.url | regex_replace('/$', '') ~ '.git')
+      }}
+    aap_repo_name: "{{ aap_github_repo_item.name }}"
+
+- name: aap_controller | Reset project match for repo
+  ansible.builtin.set_fact:
+    aap_repo_project_match: {}
+
+- name: aap_controller | Match existing project by SCM URL
+  ansible.builtin.set_fact:
+    aap_repo_project_match: "{{ item }}"
+  loop: "{{ aap_controller_projects }}"
+  when:
+    - item.scm_url is defined
+    - item.scm_url | lower == aap_repo_scm_url | lower
+  loop_control:
+    label: "{{ item.name | default('?') }}"
+
+- name: aap_controller | Match existing project by name
+  ansible.builtin.set_fact:
+    aap_repo_project_match: "{{ item }}"
+  loop: "{{ aap_controller_projects }}"
+  when:
+    - aap_repo_project_match.id is not defined
+    - item.name == aap_repo_name
+  loop_control:
+    label: "{{ item.name | default('?') }}"
+
+- name: aap_controller | Skip repo already linked to correct SCM URL
+  ansible.builtin.debug:
+    msg: "OK [{{ aap_repo_name }}] already at {{ aap_repo_scm_url }}"
+  when:
+    - aap_repo_project_match.id is defined
+    - aap_repo_project_match.scm_url | default('') | lower == aap_repo_scm_url | lower
+
+- name: aap_controller | Patch project SCM URL when name exists
+  when:
+    - aap_repo_project_match.id is defined
+    - aap_repo_project_match.scm_url | default('') | lower != aap_repo_scm_url | lower
+  block:
+    - name: aap_controller | Update project SCM via API
+      ansible.builtin.uri:
+        url: "{{ aap_base_url }}/api/controller/v2/projects/{{ aap_repo_project_match.id }}/"
+        method: PATCH
+        validate_certs: "{{ foundry_validate_certs }}"
+        force_basic_auth: true
+        url_username: "{{ aap_user }}"
+        url_password: "{{ aap_password }}"
+        body_format: json
+        body:
+          scm_url: "{{ aap_repo_scm_url }}"
+          scm_branch: "{{ aap_scm_branch }}"
+        status_code: 200
+      register: aap_controller_project_patch
+
+    - name: aap_controller | Record patch
+      ansible.builtin.set_fact:
+        aap_sync_projects_updated: "{{ aap_sync_projects_updated | int + 1 }}"
+
+    - name: aap_controller | Sync patched project
+      ansible.builtin.include_tasks: start-project-sync-api.yml
+      vars:
+        aap_project_id: "{{ aap_repo_project_match.id }}"
+      when: aap_sync_project_updates | bool
+
+- name: aap_controller | Create project for repo
+  when: aap_repo_project_match.id is not defined
+  block:
+    - name: aap_controller | POST new project
+      ansible.builtin.uri:
+        url: "{{ aap_base_url }}/api/controller/v2/projects/"
+        method: POST
+        validate_certs: "{{ foundry_validate_certs }}"
+        force_basic_auth: true
+        url_username: "{{ aap_user }}"
+        url_password: "{{ aap_password }}"
+        body_format: json
+        body:
+          name: "{{ aap_repo_name }}"
+          organization: "{{ aap_organization_id }}"
+          scm_type: git
+          scm_url: "{{ aap_repo_scm_url }}"
+          scm_branch: "{{ aap_scm_branch }}"
+          scm_clean: "{{ aap_scm_clean }}"
+          scm_update_on_launch: "{{ aap_scm_update_on_launch }}"
+        status_code: 201
+      register: aap_controller_project_created
+
+    - name: aap_controller | Append to in-memory project list
+      ansible.builtin.set_fact:
+        aap_controller_projects: "{{ aap_controller_projects + [aap_controller_project_created.json] }}"
+        aap_sync_projects_created: "{{ aap_sync_projects_created | int + 1 }}"
+
+    - name: aap_controller | Sync new project
+      ansible.builtin.include_tasks: start-project-sync-api.yml
+      vars:
+        aap_project_id: "{{ aap_controller_project_created.json.id }}"
+      when: aap_sync_project_updates | bool
+
+    - name: aap_controller | Log create
+      ansible.builtin.debug:
+        msg: "CREATE [{{ aap_repo_name }}] {{ aap_repo_scm_url }} id={{ aap_controller_project_created.json.id }}"

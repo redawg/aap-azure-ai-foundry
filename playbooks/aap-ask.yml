@@ -1,0 +1,44 @@
+---
+# Run an AAP operation: MCP tools first, ansible-navigator playbook fallback.
+#
+#   ansible-playbook playbooks/aap-ask.yml -e aap_mcp_operation=sync-github-projects
+# Prefer: ./scripts/aap-ask.sh sync-github-projects
+#
+- name: AAP MCP or ansible-navigator
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+
+  tasks:
+    - name: Require operation name
+      ansible.builtin.assert:
+        that:
+          - aap_mcp_operation | length > 0
+        fail_msg: >-
+          Set aap_mcp_operation (e.g. sync-github-projects, list-projects,
+          list-job-templates, create-project, launch-job-template).
+
+    - name: MCP first, navigator fallback
+      ansible.builtin.command:
+        cmd: >-
+          python3 {{ repo_root }}/scripts/aap_mcp_or_navigator.py
+          {{ aap_mcp_operation }}
+          {{ aap_mcp_navigator_extra_args | default('') }}
+      environment:
+        AAP_USER: "{{ aap_user }}"
+        AAP_PASSWORD: "{{ aap_password }}"
+        AAP_GATEWAY_TOKEN: "{{ aap_gateway_token | default('') }}"
+        AAP_BASE_URL: "{{ aap_base_url }}"
+        AAP_MCP_BASE_URL: "{{ aap_mcp_base_url }}"
+        AAP_MCP_SERVER_PATH: "{{ aap_mcp_server_path }}"
+        AAP_GITHUB_OWNER: "{{ aap_github_owner | default('redawg') }}"
+        AAP_ORGANIZATION_ID: "{{ aap_organization_id | default(1) }}"
+        AAP_GITHUB_REPO_LIMIT: "{{ aap_github_repo_limit | default(100) }}"
+      register: aap_ask_result
+      changed_when: false
+      failed_when: aap_ask_result.rc != 0
+
+    - name: Show result
+      ansible.builtin.debug:
+        var: aap_ask_result.stdout_lines

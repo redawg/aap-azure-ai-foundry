@@ -1,0 +1,15 @@
+---
+# Fallback: create one Controller project via API.
+#
+#   ./scripts/aap-ask.sh create-project \
+#     -e aap_project_name=my-repo -e aap_project_scm_url=https://github.com/redawg/my-repo.git
+#
+- name: Create AAP project (Controller API)
+  hosts: foundry
+  gather_facts: false
+
+  vars:
+    aap_controller_action: create-project-api
+
+  roles:
+    - role: aap_controller

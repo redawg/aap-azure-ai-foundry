@@ -9,3 +9,24 @@ aap_recent_jobs_limit: 10
 aap_job_template_search: ""
 aap_launch_job_template_id: ""
 aap_launch_job_template_name: ""
+
+# Controller projects (API — use when MCP has no write tools, e.g. no projects_create)
+aap_organization_id: 1
+aap_projects_page_size: 200
+aap_scm_branch: main
+aap_scm_clean: true
+aap_scm_update_on_launch: true
+aap_sync_project_updates: true
+
+# GitHub → AAP project sync (playbooks/sync-github-projects.yml)
+aap_github_owner: redawg
+aap_github_repo_limit: 100
+# Explicit list; leave empty to discover public repos via `gh` CLI
+aap_github_repos: []
+# Optional: read projects via MCP tools/call projects_list (still creates via API)
+aap_use_mcp_for_project_read: false
+
+# Single project create (playbooks/aap-create-project.yml)
+aap_project_name: ""
+aap_project_scm_url: ""
+aap_project_description: ""

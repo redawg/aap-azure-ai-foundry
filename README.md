@@ -2,7 +2,39 @@
 
 Register an **already-deployed** Ansible Automation Platform MCP server with [Azure AI Foundry Agent Service](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/model-context-protocol).
 
-The repo is **Ansible-first**: shell scripts are thin wrappers around `ansible-playbook`.
+The repo is **Ansible-first**: shell scripts are thin wrappers around `ansible-playbook` or **ansible-navigator** when MCP cannot make the change.
+
+## Asking AAP (MCP first, Ansible fallback)
+
+Use **`./scripts/aap-ask.sh <operation>`** to talk to the workshop AAP MCP server first. If the needed MCP tool is missing (for example `projects_create`), it automatically runs the matching playbook with **ansible-navigator** (or `ansible-playbook` if navigator is not installed).
+
+| Command | MCP tool tried | Fallback playbook |
+|---------|----------------|-------------------|
+| `./scripts/aap-ask.sh list-projects` | `projects_list` | `playbooks/aap-list-projects.yml` |
+| `./scripts/aap-ask.sh list-job-templates` | `job_templates_list` | `playbooks/mcp-list-job-templates.yml` |
+| `./scripts/aap-ask.sh sync-github-projects` | `projects_create` | `playbooks/sync-github-projects.yml` |
+| `./scripts/aap-ask.sh create-project` | `projects_create` | `playbooks/aap-create-project.yml` |
+| `./scripts/aap-ask.sh launch-job-template` | `job_templates_launch_create` | `playbooks/launch-job-template.yml` |
+
+```bash
+# Requires AAP_PASSWORD or aap_gateway_token in group_vars/all.yml
+./scripts/aap-ask.sh list-projects
+./scripts/aap-ask.sh sync-github-projects
+
+# Or via Ansible wrapper:
+ansible-playbook playbooks/aap-ask.yml -e aap_mcp_operation=sync-github-projects
+```
+
+On the workshop cluster, MCP exposes **`projects_list`** but not **`projects_create`**, so repo sync uses the fallback playbook (Controller API via `uri`).
+
+## Red Hat console: Galaxy + Analytics credentials
+
+[access.redhat.com/articles/7112649](https://access.redhat.com/articles/7112649) covers **service accounts** for **Automation Analytics** and **subscriptions**. It does **not** replace the Automation Hub token used for Galaxy collection sync.
+
+| Need | Console | Doc / playbook |
+|------|---------|----------------|
+| Hub / Galaxy API token | [automation-hub/token](https://console.redhat.com/ansible/automation-hub/token) | [`docs/REDHAT-CONSOLE-CREDENTIALS.md`](docs/REDHAT-CONSOLE-CREDENTIALS.md), [`playbooks/aap-redhat-galaxy-credential.yml`](playbooks/aap-redhat-galaxy-credential.yml) |
+| Analytics service account | [iam/service-accounts](https://console.redhat.com/iam/service-accounts) | Same doc, [`playbooks/aap-redhat-analytics-service-account.yml`](playbooks/aap-redhat-analytics-service-account.yml) |
 
 ## Quick start
 
@@ -34,6 +66,10 @@ Workshop Foundry project endpoint (example):
 | [`playbooks/mcp-list-job-templates.yml`](playbooks/mcp-list-job-templates.yml) | Templates via MCP |
 | [`playbooks/openshift-mcp-routes.yml`](playbooks/openshift-mcp-routes.yml) | `oc` MCP CRs and routes |
 | [`playbooks/provision-aap-analytics.yml`](playbooks/provision-aap-analytics.yml) | AAP 2.6 MetricsService + controller metrics-utility on OpenShift |
+| [`playbooks/aap-ask.yml`](playbooks/aap-ask.yml) | MCP-first operations with ansible-navigator fallback |
+| [`playbooks/sync-github-projects.yml`](playbooks/sync-github-projects.yml) | Fallback: sync `redawg/*` GitHub repos to Controller projects (API) |
+| [`playbooks/aap-list-projects.yml`](playbooks/aap-list-projects.yml) | Fallback: list Controller projects (API) |
+| [`playbooks/aap-create-project.yml`](playbooks/aap-create-project.yml) | Fallback: create one project (API) |
 | [`playbooks/install-local-tools.yml`](playbooks/install-local-tools.yml) | Install `oc` to `~/bin` |
 | [`playbooks/azure-fedora-alerts.yml`](playbooks/azure-fedora-alerts.yml) | Fedora VM on Azure + Monitor alerts → Foundry copilot agent |
 

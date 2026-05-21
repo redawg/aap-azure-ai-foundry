@@ -1,0 +1,15 @@
+---
+# Fallback playbook: sync GitHub repos → Controller projects (API writes).
+# Prefer MCP-first entrypoint (tries projects_create, then runs this via ansible-navigator):
+#
+#   ./scripts/aap-ask.sh sync-github-projects
+#   ansible-playbook playbooks/aap-ask.yml -e aap_mcp_operation=sync-github-projects
+#
+- name: Sync GitHub repos to AAP projects
+  hosts: foundry
+  gather_facts: false
+  vars:
+    aap_controller_action: sync-github-projects
+
+  roles:
+    - role: aap_controller

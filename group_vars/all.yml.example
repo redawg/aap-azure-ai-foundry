@@ -1,7 +1,7 @@
 ---
 # Copy to group_vars/all.yml (or use ansible-vault) — do not commit secrets.
 
-# Workshop AAP + MCP endpoints
+# Workshop AAP + MCP endpoints (required for Red Hat / Controller playbooks)
 aap_base_url: https://aap-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
 aap_mcp_base_url: https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
 aap_mcp_server_path: /mcp
@@ -44,6 +44,21 @@ ocp_api_url: https://api.cluster-wg2cd-2.dynamic2.redhatworkshops.io:6443
 # AAP 2.6 analytics (MetricsService + metrics-utility)
 # aap_analytics_enable_metrics_service: true
 # aap_analytics_enable_metrics_utility: true
+
+# Ask AAP: MCP first, ansible-navigator fallback (scripts/aap-ask.sh)
+# aap_mcp_operation: sync-github-projects
+
+# Sync GitHub repos → Controller projects (./scripts/aap-ask.sh sync-github-projects)
+# aap_github_owner: redawg
+# aap_organization_id: 1
+
+# Red Hat console (docs/REDHAT-CONSOLE-CREDENTIALS.md) — do not commit secrets
+# aap_galaxy_credential_name: Red Hat Automation Hub
+# aap_galaxy_hub_url: https://console.redhat.com/api/automation-hub/
+# aap_galaxy_auth_url: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+# aap_galaxy_api_token: ""
+# redhat_analytics_client_id: ""
+# redhat_analytics_client_secret: ""
 
 # Optional: set instead of `az account get-access-token`
 # foundry_agent_token: ""

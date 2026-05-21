@@ -1,0 +1,91 @@
+---
+# Optional read path when MCP exposes projects_list (no projects_create on workshop MCP).
+- name: aap_controller | Ensure Gateway token for MCP
+  ansible.builtin.include_role:
+    name: foundry_mcp_agent
+    tasks_from: gateway-token.yml
+  when: aap_gateway_token | default('', true) | length == 0
+
+- name: aap_controller | MCP initialize
+  ansible.builtin.uri:
+    url: "{{ aap_mcp_base_url }}{{ aap_mcp_server_path }}"
+    method: POST
+    validate_certs: "{{ foundry_validate_certs }}"
+    headers:
+      Authorization: "Bearer {{ aap_gateway_token }}"
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+    body_format: json
+    body:
+      jsonrpc: "2.0"
+      id: 1
+      method: initialize
+      params:
+        protocolVersion: "2024-11-05"
+        capabilities: {}
+        clientInfo:
+          name: ansible-aap-controller
+          version: "1.0"
+    status_code: 200
+  register: aap_controller_mcp_init
+  changed_when: false
+  no_log: true
+
+- name: aap_controller | Capture MCP session id
+  ansible.builtin.set_fact:
+    aap_mcp_session_id: >-
+      {{ aap_controller_mcp_init.headers['mcp-session-id']
+         | default(aap_controller_mcp_init.headers['Mcp-Session-Id'], true) }}
+  changed_when: false
+
+- name: aap_controller | MCP tools/call projects_list
+  ansible.builtin.uri:
+    url: "{{ aap_mcp_base_url }}{{ aap_mcp_server_path }}"
+    method: POST
+    validate_certs: "{{ foundry_validate_certs }}"
+    headers:
+      Authorization: "Bearer {{ aap_gateway_token }}"
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+      Mcp-Session-Id: "{{ aap_mcp_session_id }}"
+    body_format: json
+    body:
+      jsonrpc: "2.0"
+      id: 2
+      method: tools/call
+      params:
+        name: projects_list
+        arguments:
+          page_size: "{{ aap_projects_page_size }}"
+    status_code: 200
+  register: aap_controller_mcp_projects_call
+  changed_when: false
+  no_log: true
+
+- name: aap_controller | Parse MCP projects_list payload
+  ansible.builtin.set_fact:
+    aap_controller_mcp_projects_raw: >-
+      {{
+        (
+          aap_controller_mcp_projects_call.content.split('\n')
+          | select('match', '^data: ')
+          | map('regex_replace', '^data: ', '')
+          | list
+          | last
+          | default(aap_controller_mcp_projects_call.content)
+        )
+        | from_json
+      }}
+  changed_when: false
+
+- name: aap_controller | Extract project records from MCP tool result
+  ansible.builtin.set_fact:
+    aap_controller_projects: >-
+      {{
+        (aap_controller_mcp_projects_raw.result.content[0].text | from_json).results
+      }}
+    aap_controller_projects_count: >-
+      {{
+        (aap_controller_mcp_projects_raw.result.content[0].text | from_json).count
+      }}
+  changed_when: false

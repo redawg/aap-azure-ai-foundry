@@ -1,0 +1,30 @@
+---
+- name: aap_controller | List projects via Controller API
+  ansible.builtin.uri:
+    url: "{{ aap_base_url }}/api/controller/v2/projects/?page_size={{ aap_projects_page_size }}"
+    method: GET
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    return_content: true
+    status_code: 200
+  register: aap_controller_projects_api
+  changed_when: false
+
+- name: aap_controller | Cache project list
+  ansible.builtin.set_fact:
+    aap_controller_projects: "{{ aap_controller_projects_api.json.results }}"
+    aap_controller_projects_count: "{{ aap_controller_projects_api.json.count }}"
+  changed_when: false
+
+- name: aap_controller | Show projects
+  ansible.builtin.debug:
+    msg: >-
+      [{{ item.id }}] {{ item.name }}
+      org={{ item.summary_fields.organization.name | default('-') }}
+      scm={{ item.scm_url | default('-') }}
+      status={{ item.status | default('-') }}
+  loop: "{{ aap_controller_projects }}"
+  loop_control:
+    label: "{{ item.name }}"

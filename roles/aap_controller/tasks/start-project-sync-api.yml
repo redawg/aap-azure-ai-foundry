@@ -1,0 +1,24 @@
+---
+- name: aap_controller | Require project id for sync
+  ansible.builtin.assert:
+    that:
+      - aap_project_id is defined
+      - aap_project_id | string | length > 0
+
+- name: aap_controller | Trigger project SCM update
+  ansible.builtin.uri:
+    url: "{{ aap_base_url }}/api/controller/v2/projects/{{ aap_project_id }}/update/"
+    method: POST
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    body_format: json
+    body: {}
+    status_code: [200, 201, 202]
+  register: aap_controller_project_sync
+  changed_when: true
+
+- name: aap_controller | SCM sync queued
+  ansible.builtin.debug:
+    msg: "Project update started for id={{ aap_project_id }}"

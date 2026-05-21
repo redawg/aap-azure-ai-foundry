@@ -1,0 +1,50 @@
+---
+- name: aap_controller | Require project name and SCM URL
+  ansible.builtin.assert:
+    that:
+      - aap_project_name | length > 0
+      - aap_project_scm_url | length > 0
+    fail_msg: Set aap_project_name and aap_project_scm_url (playbook vars or -e).
+
+- name: aap_controller | Normalize SCM URL
+  ansible.builtin.set_fact:
+    aap_project_scm_url_normalized: >-
+      {{
+        aap_project_scm_url
+        if aap_project_scm_url.endswith('.git')
+        else (aap_project_scm_url | regex_replace('/$', '') ~ '.git')
+      }}
+
+- name: aap_controller | Create project via Controller API
+  ansible.builtin.uri:
+    url: "{{ aap_base_url }}/api/controller/v2/projects/"
+    method: POST
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    body_format: json
+    body:
+      name: "{{ aap_project_name }}"
+      description: "{{ aap_project_description }}"
+      organization: "{{ aap_organization_id }}"
+      scm_type: git
+      scm_url: "{{ aap_project_scm_url_normalized }}"
+      scm_branch: "{{ aap_scm_branch }}"
+      scm_clean: "{{ aap_scm_clean }}"
+      scm_update_on_launch: "{{ aap_scm_update_on_launch }}"
+    status_code: 201
+  register: aap_controller_project_create
+
+- name: aap_controller | Show created project
+  ansible.builtin.debug:
+    msg: >-
+      Created project id={{ aap_controller_project_create.json.id }}
+      name={{ aap_controller_project_create.json.name }}
+      scm={{ aap_controller_project_create.json.scm_url }}
+
+- name: aap_controller | Start SCM sync for new project
+  ansible.builtin.include_tasks: start-project-sync-api.yml
+  vars:
+    aap_project_id: "{{ aap_controller_project_create.json.id }}"
+  when: aap_sync_project_updates | bool

@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 set -euo pipefail
-exec "$(dirname "$0")/_run-playbook.sh" playbooks/mcp-list-job-templates.yml "$@"
+exec "$(dirname "$0")/aap-ask.sh" list-job-templates "$@"

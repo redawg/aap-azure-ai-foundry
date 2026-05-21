@@ -1,0 +1,67 @@
+---
+# Sync public GitHub repos into Controller projects.
+# MCP only exposes projects_list (read); creates/updates use Controller API.
+- name: aap_controller | Initialize sync counters
+  ansible.builtin.set_fact:
+    aap_sync_projects_created: 0
+    aap_sync_projects_updated: 0
+
+- name: aap_controller | Load projects via MCP (optional)
+  ansible.builtin.include_tasks: mcp-projects-list.yml
+  when: aap_use_mcp_for_project_read | bool
+
+- name: aap_controller | Load projects via Controller API
+  ansible.builtin.include_tasks: list-projects-api.yml
+  when: not (aap_use_mcp_for_project_read | bool)
+
+- name: aap_controller | Discover GitHub repos with gh CLI
+  when: aap_github_repos | length == 0
+  block:
+    - name: aap_controller | Require gh for auto-discovery
+      ansible.builtin.command:
+        cmd: gh --version
+      register: aap_controller_gh_version
+      changed_when: false
+      failed_when: aap_controller_gh_version.rc != 0
+
+    - name: aap_controller | List public repos
+      ansible.builtin.command:
+        cmd: >-
+          gh repo list {{ aap_github_owner }}
+          --limit {{ aap_github_repo_limit }}
+          --json name,url,isPrivate
+      register: aap_controller_gh_repos
+      changed_when: false
+
+    - name: aap_controller | Keep public repos only
+      ansible.builtin.set_fact:
+        aap_github_repos: >-
+          {{
+            (aap_controller_gh_repos.stdout | from_json)
+            | rejectattr('isPrivate')
+            | list
+          }}
+
+- name: aap_controller | Require repo list
+  ansible.builtin.assert:
+    that:
+      - aap_github_repos | length > 0
+    fail_msg: >-
+      No repos to sync. Set aap_github_repos or install `gh` and set aap_github_owner.
+
+- name: aap_controller | Sync each GitHub repo to a Controller project
+  ansible.builtin.include_tasks: _sync-one-github-repo.yml
+  loop: "{{ aap_github_repos }}"
+  loop_control:
+    loop_var: aap_github_repo_item
+    label: "{{ aap_github_repo_item.name }}"
+
+- name: aap_controller | Sync summary
+  ansible.builtin.debug:
+    msg:
+      - "GitHub owner: {{ aap_github_owner }}"
+      - "Repos processed: {{ aap_github_repos | length }}"
+      - "Created: {{ aap_sync_projects_created }}"
+      - "Updated: {{ aap_sync_projects_updated }}"
+      - "Read path: {{ 'MCP projects_list' if aap_use_mcp_for_project_read else 'Controller API' }}"
+      - "Write path: Controller API (MCP has no projects_create on this deployment)"

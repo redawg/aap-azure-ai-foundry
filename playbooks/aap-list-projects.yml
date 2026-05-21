@@ -1,0 +1,14 @@
+---
+# Fallback: list Controller projects via API (when MCP read fails or for CI).
+#
+#   ansible-playbook playbooks/aap-list-projects.yml
+# Prefer: ./scripts/aap-ask.sh list-projects
+#
+- name: List AAP projects (Controller API)
+  hosts: foundry
+  gather_facts: false
+  vars:
+    aap_controller_action: list-projects-api
+
+  roles:
+    - role: aap_controller
