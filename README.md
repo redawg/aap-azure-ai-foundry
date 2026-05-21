@@ -93,7 +93,10 @@ Workshop Foundry project endpoint (example):
 | File | Purpose |
 |------|---------|
 | [`config/azure_alert_template_map.yml`](config/azure_alert_template_map.yml) | Keyword → template hints |
-| [`examples/azure-alert-mcp-404.json`](examples/azure-alert-mcp-404.json) | Sample alert for Playground |
+| [`examples/AGENT-ALERT-PROMPTS.md`](examples/AGENT-ALERT-PROMPTS.md) | Copy-paste Playground prompts + optional live alert |
+| [`examples/azure-alert-mcp-404.json`](examples/azure-alert-mcp-404.json) | MCP tools/list / Bearer auth failure |
+| [`examples/azure-alert-vm-cpu-high.json`](examples/azure-alert-vm-cpu-high.json) | Metric alert: VM CPU high |
+| [`examples/azure-alert-rhel-deploy-failed.json`](examples/azure-alert-rhel-deploy-failed.json) | Activity-style: RHEL BYOS deploy failed |
 
 ```bash
 ansible-playbook playbooks/update-agent-instructions.yml

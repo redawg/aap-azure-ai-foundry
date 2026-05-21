@@ -1,0 +1,50 @@
+{
+  "schemaId": "azureMonitorCommonAlertSchema",
+  "data": {
+    "essentials": {
+      "alertId": "/subscriptions/9dc2c3d2-35a8-4370-8997-b56a57b5778d/providers/Microsoft.AlertsManagement/alerts/00000000-0000-0000-0000-000000000001",
+      "alertRule": "aap-fedora-demo-cpu-high",
+      "alertRuleID": "/subscriptions/9dc2c3d2-35a8-4370-8997-b56a57b5778d/resourceGroups/openenv-wg2cd-1/providers/Microsoft.Insights/metricAlerts/aap-fedora-demo-cpu-high",
+      "severity": "Sev2",
+      "signalType": "Metric",
+      "monitorCondition": "Fired",
+      "monitoringService": "Platform",
+      "alertTargetIDs": [
+        "/subscriptions/9dc2c3d2-35a8-4370-8997-b56a57b5778d/resourceGroups/openenv-wg2cd-1/providers/Microsoft.Compute/virtualMachines/aap-fedora-demo-vm"
+      ],
+      "originAlertId": "00000000-0000-0000-0000-000000000001",
+      "firedDateTime": "2026-05-21T16:30:00.0000000Z",
+      "description": "Average Percentage CPU for VM aap-fedora-demo-vm is above 75% for 5 minutes.",
+      "essentialsVersion": "1.0",
+      "alertContextVersion": "1.0",
+      "investigationLink": "https://portal.azure.com/#blade/Microsoft_Azure_Monitoring/AzureMonitoringBrowseBlade/alarmsV2",
+      "targetResourceType": "Microsoft.Compute/virtualMachines",
+      "targetResource": "/subscriptions/9dc2c3d2-35a8-4370-8997-b56a57b5778d/resourceGroups/openenv-wg2cd-1/providers/Microsoft.Compute/virtualMachines/aap-fedora-demo-vm",
+      "targetResourceName": "aap-fedora-demo-vm",
+      "targetResourceGroup": "openenv-wg2cd-1",
+      "subscriptionId": "9dc2c3d2-35a8-4370-8997-b56a57b5778d"
+    },
+    "alertContext": {
+      "conditionType": "SingleResourceMultipleMetricCriteria",
+      "condition": {
+        "windowSize": "PT5M",
+        "allOf": [
+          {
+            "metricName": "Percentage CPU",
+            "metricNamespace": "Microsoft.Compute/virtualMachines",
+            "operator": "GreaterThan",
+            "threshold": "75",
+            "timeAggregation": "Average",
+            "metricValue": 89.2,
+            "dimensions": []
+          }
+        ]
+      },
+      "properties": {
+        "message": "VM aap-fedora-demo-vm in openenv-wg2cd-1 exceeded CPU threshold. Consider scaling, stopping non-essential workloads, or running remediation via AAP.",
+        "resourceId": "/subscriptions/9dc2c3d2-35a8-4370-8997-b56a57b5778d/resourceGroups/openenv-wg2cd-1/providers/Microsoft.Compute/virtualMachines/aap-fedora-demo-vm",
+        "resourceType": "Microsoft.Compute/virtualMachines"
+      }
+    }
+  }
+}

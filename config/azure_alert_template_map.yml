@@ -48,6 +48,35 @@ templates:
       - aks
       - multi-resource
       - bulk
+  - id: 38
+    name: Azure RG + RHEL BYOS Server
+    org: Default
+    use_when:
+      - resource group
+      - rhel
+      - byos
+      - byol
+      - red hat
+      - virtual machine
+      - vm deployment
+      - compute
+      - azure rm
+      - provision
+      - failed deployment
+      - image publisher
+  - id: 37
+    name: Azure VM + Foundry Alerts
+    org: Default
+    use_when:
+      - fedora
+      - foundry
+      - metric alert
+      - cpu
+      - percentage cpu
+      - monitor
+      - function app
+      - alert bridge
+      - openenv
 
 alert_field_hints:
   - alertRuleName

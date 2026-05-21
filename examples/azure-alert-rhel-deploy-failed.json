@@ -1,0 +1,27 @@
+{
+  "schemaId": "azureMonitorCommonAlertSchema",
+  "data": {
+    "essentials": {
+      "alertId": "example-rhel-deploy-failed",
+      "alertRule": "Azure VM deployment failed - RHEL BYOS",
+      "severity": "Sev1",
+      "signalType": "Activity Log",
+      "monitorCondition": "Fired",
+      "description": "Deployment of virtual machine aap-rhel-byol-01 in resource group aap-rhel-rg failed.",
+      "targetResourceType": "Microsoft.Compute/virtualMachines",
+      "targetResource": "/subscriptions/9dc2c3d2-35a8-4370-8997-b56a57b5778d/resourceGroups/aap-rhel-rg/providers/Microsoft.Compute/virtualMachines/aap-rhel-byol-01",
+      "targetResourceName": "aap-rhel-byol-01",
+      "targetResourceGroup": "aap-rhel-rg"
+    },
+    "alertContext": {
+      "properties": {
+        "statusCode": "Failed",
+        "operationName": "Microsoft.Compute/virtualMachines/write",
+        "errorMessage": "The image publisher 'FedoraLinux' was not found. RHEL BYOS image RedHat:rhel-byos:rhel-lvm79 may require marketplace acceptance or correct plan/offer.",
+        "resourceGroup": "aap-rhel-rg",
+        "subscriptionId": "9dc2c3d2-35a8-4370-8997-b56a57b5778d",
+        "correlationId": "aap-rhel-byol-deploy-001"
+      }
+    }
+  }
+}
