@@ -1,4 +1,13 @@
+# Python packages for local scripts (Foundry registration, MCP helpers, GitHub sync).
+# Not used by Ansible playbooks on the controller; those use collections/requirements.yml.
+#
+#   pip install -r requirements.txt
+#
+# Foundry agent registration (scripts/configure-foundry-agent.py, update-foundry-agent-instructions.py)
 azure-ai-projects>=1.0.0
 azure-identity>=1.19.0
 python-dotenv>=1.0.0
 pyyaml>=6.0.0
+
+# MCP / Controller API helpers (scripts/mcp-sync-github-projects.py)
+requests>=2.31.0

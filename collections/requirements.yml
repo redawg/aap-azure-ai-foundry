@@ -1,6 +1,17 @@
 ---
+# Ansible collections required by playbooks and roles in this repo.
+# Install: ansible-galaxy collection install -r collections/requirements.yml -p collections
+# AAP execution environments should include the same list in the EE definition.
+
 collections:
+  # azure.azcollection dependency (azure_rm_* modules)
+  - name: ansible.netcommon
+    version: ">=3.0.0"
+
+  # playbooks/azure-rhel-byol-server.yml, Azure RM resources
   - name: azure.azcollection
     version: ">=2.0.0"
+
+  # roles/azure_fedora_foundry_alerts (community.general.archive for Function zip)
   - name: community.general
     version: ">=8.0.0"

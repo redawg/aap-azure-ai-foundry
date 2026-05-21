@@ -42,9 +42,14 @@ On the workshop cluster, MCP exposes **`projects_list`** but not **`projects_cre
 cp group_vars/all.yml.example group_vars/all.yml
 # Edit: aap_password, foundry_project_endpoint (or foundry_account + foundry_project)
 
+pip install -r requirements.txt
+ansible-galaxy collection install -r collections/requirements.yml -p collections
+
 az login
 ansible-playbook playbooks/site.yml
 ```
+
+**Dependencies:** Python tools use [`requirements.txt`](requirements.txt). Ansible playbooks need [`collections/requirements.yml`](collections/requirements.yml) (`ansible.netcommon`, `azure.azcollection`, `community.general`). The Function App under `roles/azure_fedora_foundry_alerts/files/function_bridge/` has its own [`requirements.txt`](roles/azure_fedora_foundry_alerts/files/function_bridge/requirements.txt) for Azure deployment.
 
 Workshop Foundry project endpoint (example):
 

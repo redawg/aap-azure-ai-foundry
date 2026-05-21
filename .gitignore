@@ -4,3 +4,5 @@ group_vars/all.yml
 .venv/
 __pycache__/
 *.pyc
+ansible-navigator.log
+collections/ansible_collections/
