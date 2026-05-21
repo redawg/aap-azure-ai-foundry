@@ -18,6 +18,7 @@
       az functionapp create
       --resource-group {{ azure_fedora_deploy_rg }}
       --consumption-plan-location {{ azure_location }}
+      --os-type Linux
       --runtime {{ azure_fedora_function_runtime }}
       --runtime-version {{ azure_fedora_function_runtime_version }}
       --functions-version 4

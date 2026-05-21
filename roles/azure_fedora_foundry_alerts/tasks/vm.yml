@@ -65,11 +65,50 @@
   register: azure_fedora_vm_create
   changed_when: azure_fedora_vm_create.rc == 0
 
-- name: azure_fedora_foundry_alerts | Parse VM resource id
+- name: azure_fedora_foundry_alerts | Parse VM resource id from az vm create output
   ansible.builtin.set_fact:
-    azure_fedora_vm_id: "{{ (azure_fedora_vm_create.stdout | from_json).id }}"
-    azure_fedora_vm_name: "{{ (azure_fedora_vm_create.stdout | from_json).name }}"
+    azure_fedora_vm_create_json: "{{ azure_fedora_vm_create.stdout | from_json }}"
   when: azure_fedora_vm_create.stdout | length > 0
+
+- name: azure_fedora_foundry_alerts | Set VM id/name from create JSON when present
+  ansible.builtin.set_fact:
+    azure_fedora_vm_id: >-
+      {{
+        azure_fedora_vm_create_json.id
+        | default(azure_fedora_vm_create_json.resourceId, true)
+      }}
+    azure_fedora_vm_name: >-
+      {{
+        azure_fedora_vm_create_json.name
+        | default(azure_fedora_name_prefix ~ '-vm', true)
+      }}
+  when:
+    - azure_fedora_vm_create_json is defined
+    - azure_fedora_vm_create_json.id is defined
+      or azure_fedora_vm_create_json.resourceId is defined
+
+- name: azure_fedora_foundry_alerts | Load VM id/name via az vm show (fallback)
+  when: azure_fedora_vm_id is not defined
+  block:
+    - name: azure_fedora_foundry_alerts | Query VM in resource group
+      ansible.builtin.command:
+        argv:
+          - az
+          - vm
+          - show
+          - --resource-group
+          - "{{ azure_fedora_deploy_rg }}"
+          - --name
+          - "{{ azure_fedora_name_prefix }}-vm"
+          - --output
+          - json
+      register: azure_fedora_vm_show
+      changed_when: false
+
+    - name: azure_fedora_foundry_alerts | Set VM facts from az vm show
+      ansible.builtin.set_fact:
+        azure_fedora_vm_id: "{{ (azure_fedora_vm_show.stdout | from_json).id }}"
+        azure_fedora_vm_name: "{{ (azure_fedora_vm_show.stdout | from_json).name }}"
 
 - name: azure_fedora_foundry_alerts | Show VM details
   ansible.builtin.debug:

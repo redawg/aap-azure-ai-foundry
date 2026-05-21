@@ -8,6 +8,20 @@
         else (aap_github_repo_item.url | regex_replace('/$', '') ~ '.git')
       }}
     aap_repo_name: "{{ aap_github_repo_item.name }}"
+    aap_repo_scm_branch: >-
+      {{
+        aap_github_repo_item.default_branch
+        | default(
+            aap_github_repo_item.defaultBranchRef.name
+            if (
+              aap_github_repo_item.defaultBranchRef is defined
+              and aap_github_repo_item.defaultBranchRef
+            )
+            else '',
+            true
+          )
+        | default(aap_scm_branch, true)
+      }}
 
 - name: aap_controller | Reset project match for repo
   ansible.builtin.set_fact:
@@ -33,17 +47,19 @@
   loop_control:
     label: "{{ item.name | default('?') }}"
 
-- name: aap_controller | Skip repo already linked to correct SCM URL
+- name: aap_controller | Skip repo already linked with correct URL and branch
   ansible.builtin.debug:
-    msg: "OK [{{ aap_repo_name }}] already at {{ aap_repo_scm_url }}"
+    msg: "OK [{{ aap_repo_name }}] {{ aap_repo_scm_url }} @ {{ aap_repo_scm_branch }}"
   when:
     - aap_repo_project_match.id is defined
     - aap_repo_project_match.scm_url | default('') | lower == aap_repo_scm_url | lower
+    - aap_repo_project_match.scm_branch | default('') == aap_repo_scm_branch
 
-- name: aap_controller | Patch project SCM URL when name exists
+- name: aap_controller | Patch project SCM URL or branch when mismatched
   when:
     - aap_repo_project_match.id is defined
     - aap_repo_project_match.scm_url | default('') | lower != aap_repo_scm_url | lower
+      or aap_repo_project_match.scm_branch | default('') != aap_repo_scm_branch
   block:
     - name: aap_controller | Update project SCM via API
       ansible.builtin.uri:
@@ -56,7 +72,7 @@
         body_format: json
         body:
           scm_url: "{{ aap_repo_scm_url }}"
-          scm_branch: "{{ aap_scm_branch }}"
+          scm_branch: "{{ aap_repo_scm_branch }}"
         status_code: 200
       register: aap_controller_project_patch
 
@@ -87,7 +103,7 @@
           organization: "{{ aap_organization_id }}"
           scm_type: git
           scm_url: "{{ aap_repo_scm_url }}"
-          scm_branch: "{{ aap_scm_branch }}"
+          scm_branch: "{{ aap_repo_scm_branch }}"
           scm_clean: "{{ aap_scm_clean }}"
           scm_update_on_launch: "{{ aap_scm_update_on_launch }}"
         status_code: 201

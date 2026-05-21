@@ -18,6 +18,7 @@
     - name: Show Bearer value for Foundry portal
       ansible.builtin.debug:
         msg:
-          - "Foundry connection Custom key:"
-          - "  Name: Authorization"
-          - "  Value: Bearer {{ aap_gateway_token }}"
+          - "Foundry → Connected resources → aap-mcp-bearer → Custom keys (two fields):"
+          - "  Key name (left column):  Authorization"
+          - "  Key value (right column): Bearer {{ aap_gateway_token }}"
+          - "Do NOT use 'Value' as the key name — that causes 'Failed to add header Value:' errors."

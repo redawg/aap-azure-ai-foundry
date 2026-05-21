@@ -83,11 +83,26 @@ def mcp_projects_list(token: str) -> list[dict]:
 
 def github_repos(owner: str) -> list[dict]:
     out = subprocess.check_output(
-        ["gh", "repo", "list", owner, "--limit", "100", "--json", "name,url,isPrivate"],
+        [
+            "gh",
+            "repo",
+            "list",
+            owner,
+            "--limit",
+            "100",
+            "--json",
+            "name,url,isPrivate,defaultBranchRef",
+        ],
         text=True,
     )
-    repos = json.loads(out)
-    return [r for r in repos if not r.get("isPrivate")]
+    repos = []
+    for r in json.loads(out):
+        if r.get("isPrivate"):
+            continue
+        ref = r.get("defaultBranchRef") or {}
+        r["default_branch"] = ref.get("name") or "main"
+        repos.append(r)
+    return repos
 
 
 def normalize_git_url(url: str) -> str:
@@ -117,13 +132,15 @@ def find_by_name(projects: list[dict], name: str) -> dict | None:
     return None
 
 
-def create_project(session: requests.Session, name: str, scm_url: str) -> dict:
+def create_project(
+    session: requests.Session, name: str, scm_url: str, scm_branch: str
+) -> dict:
     body = {
         "name": name,
         "organization": AAP_ORG_ID,
         "scm_type": "git",
         "scm_url": scm_url,
-        "scm_branch": "main",
+        "scm_branch": scm_branch,
         "scm_clean": True,
         "scm_update_on_launch": True,
     }
@@ -132,10 +149,12 @@ def create_project(session: requests.Session, name: str, scm_url: str) -> dict:
     return r.json()
 
 
-def update_project_scm(session: requests.Session, project_id: int, scm_url: str) -> dict:
+def update_project_scm(
+    session: requests.Session, project_id: int, scm_url: str, scm_branch: str
+) -> dict:
     r = session.patch(
         f"{AAP_BASE}/api/controller/v2/projects/{project_id}/",
-        json={"scm_url": scm_url, "scm_branch": "main"},
+        json={"scm_url": scm_url, "scm_branch": scm_branch},
         timeout=60,
     )
     r.raise_for_status()
@@ -168,26 +187,40 @@ def main() -> int:
     for repo in repos:
         name = repo["name"]
         scm_url = repo_git_url(repo["url"])
+        branch = repo.get("default_branch", "main")
         by_url = find_by_url(projects, scm_url)
         by_name = find_by_name(projects, name)
 
         if by_url:
-            print(f"OK  [{name}] already linked ({scm_url})")
-            skipped += 1
+            pid = by_url["id"]
+            if (by_url.get("scm_branch") or "") == branch:
+                print(f"OK  [{name}] already linked ({scm_url} @ {branch})")
+                skipped += 1
+                continue
+            print(f"PATCH [{name}] id={pid} branch -> {branch}")
+            update_project_scm(session, pid, scm_url, branch)
+            sync_project_update(session, pid)
+            updated += 1
             continue
 
         if by_name:
             pid = by_name["id"]
             old = by_name.get("scm_url", "")
-            print(f"PATCH [{name}] id={pid} {old} -> {scm_url}")
-            update_project_scm(session, pid, scm_url)
+            old_branch = by_name.get("scm_branch", "")
+            if old.lower() == scm_url.lower() and old_branch == branch:
+                print(f"OK  [{name}] already correct")
+                skipped += 1
+                continue
+            print(f"PATCH [{name}] id={pid} {old}@{old_branch} -> {scm_url}@{branch}")
+            update_project_scm(session, pid, scm_url, branch)
             sync_project_update(session, pid)
             updated += 1
             by_name["scm_url"] = scm_url
+            by_name["scm_branch"] = branch
             continue
 
-        print(f"CREATE [{name}] {scm_url}")
-        proj = create_project(session, name, scm_url)
+        print(f"CREATE [{name}] {scm_url} @ {branch}")
+        proj = create_project(session, name, scm_url, branch)
         projects.append(proj)
         sync_project_update(session, proj["id"])
         created += 1

@@ -15,7 +15,8 @@
 #   ansible-playbook playbooks/azure-fedora-alerts.yml -e azure_fedora_vm_image='FedoraLinux:fedora-41:41-gen2:latest'
 #
 - name: Azure Fedora VM with alerts to Foundry copilot
-  hosts: foundry
+  hosts: localhost
+  connection: local
   gather_facts: false
   vars:
     repo_root: "{{ playbook_dir | dirname }}"

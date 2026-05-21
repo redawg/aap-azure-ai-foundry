@@ -1,0 +1,136 @@
+---
+- name: aap_controller | Resolve Azure Fedora project id
+  when: aap_azure_fedora_project_id | int == 0
+  ansible.builtin.uri:
+    url: >-
+      {{ aap_base_url }}/api/controller/v2/projects/?search={{
+      aap_azure_fedora_project_name | urlencode
+      }}
+    method: GET
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    status_code: 200
+  register: aap_controller_fedora_project_search
+  changed_when: false
+
+- name: aap_controller | Set Azure Fedora project id from search
+  when:
+    - aap_azure_fedora_project_id | int == 0
+    - aap_controller_fedora_project_search.json.results | length > 0
+  ansible.builtin.set_fact:
+    aap_azure_fedora_project_id: "{{ aap_controller_fedora_project_search.json.results[0].id }}"
+
+- name: aap_controller | Require Azure Fedora project
+  ansible.builtin.assert:
+    that:
+      - aap_azure_fedora_project_id | int > 0
+    fail_msg: >-
+      Project '{{ aap_azure_fedora_project_name }}' not found. Sync the
+      aap-azure-ai-foundry project on Controller first.
+
+- name: aap_controller | Search existing Azure Fedora job template
+  ansible.builtin.uri:
+    url: >-
+      {{ aap_base_url }}/api/controller/v2/job_templates/?search={{
+      aap_azure_fedora_job_template_name | urlencode
+      }}&page_size=20
+    method: GET
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    status_code: 200
+  register: aap_controller_fedora_jt_search
+  changed_when: false
+
+- name: aap_controller | Pick matching job template
+  ansible.builtin.set_fact:
+    aap_controller_fedora_jt_match: >-
+      {{
+        (
+          aap_controller_fedora_jt_search.json.results
+          | selectattr('name', 'equalto', aap_azure_fedora_job_template_name)
+          | list
+          | first
+          | default({}, true)
+        )
+      }}
+
+- name: aap_controller | Serialize job template extra_vars for Controller API
+  ansible.builtin.set_fact:
+    aap_azure_fedora_job_extra_vars: "{{ aap_azure_fedora_default_extra_vars | to_nice_yaml }}"
+
+- name: aap_controller | Build Azure Fedora job template body
+  ansible.builtin.set_fact:
+    aap_controller_fedora_jt_body: >-
+      {{
+        {
+          'name': aap_azure_fedora_job_template_name,
+          'description': aap_azure_fedora_job_template_description,
+          'job_type': 'run',
+          'organization': aap_organization_id | int,
+          'project': aap_azure_fedora_project_id | int,
+          'inventory': aap_azure_fedora_inventory_id | int,
+          'playbook': aap_azure_fedora_playbook,
+          'become_enabled': false,
+          'ask_variables_on_launch': aap_azure_fedora_ask_variables_on_launch,
+          'extra_vars': aap_azure_fedora_job_extra_vars,
+        }
+        | combine(
+            {'execution_environment': aap_azure_fedora_execution_environment_id | int}
+            if (aap_azure_fedora_execution_environment_id | int) > 0
+            else {}
+          )
+      }}
+
+- name: aap_controller | Create Azure Fedora job template
+  when: aap_controller_fedora_jt_match.id is not defined
+  ansible.builtin.uri:
+    url: "{{ aap_base_url }}/api/controller/v2/job_templates/"
+    method: POST
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    body_format: json
+    body: "{{ aap_controller_fedora_jt_body }}"
+    status_code: 201
+  register: aap_controller_fedora_jt_create
+
+- name: aap_controller | Update Azure Fedora job template
+  when: aap_controller_fedora_jt_match.id is defined
+  ansible.builtin.uri:
+    url: >-
+      {{ aap_base_url }}/api/controller/v2/job_templates/{{
+      aap_controller_fedora_jt_match.id }}/"
+    method: PATCH
+    validate_certs: "{{ foundry_validate_certs }}"
+    force_basic_auth: true
+    url_username: "{{ aap_user }}"
+    url_password: "{{ aap_password }}"
+    body_format: json
+    body: "{{ aap_controller_fedora_jt_body }}"
+    status_code: 200
+  register: aap_controller_fedora_jt_update
+
+- name: aap_controller | Record job template id from create
+  when: aap_controller_fedora_jt_match.id is not defined
+  ansible.builtin.set_fact:
+    aap_azure_fedora_job_template_id: "{{ aap_controller_fedora_jt_create.json.id }}"
+
+- name: aap_controller | Record job template id from existing
+  when: aap_controller_fedora_jt_match.id is defined
+  ansible.builtin.set_fact:
+    aap_azure_fedora_job_template_id: "{{ aap_controller_fedora_jt_match.id }}"
+
+- name: aap_controller | Azure Fedora job template summary
+  ansible.builtin.debug:
+    msg:
+      - "Job template id={{ aap_azure_fedora_job_template_id }} name={{ aap_azure_fedora_job_template_name }}"
+      - "Project id={{ aap_azure_fedora_project_id }} playbook={{ aap_azure_fedora_playbook }}"
+      - "Inventory id={{ aap_azure_fedora_inventory_id }} (localhost / local connection)"
+      - "Launch: Templates → {{ aap_azure_fedora_job_template_name }} → Launch"
+      - "Requires: execution node with Azure CLI (`az login`) and access to subscription/RG in extra_vars"
+      - "If Fedora image fails in region, set azure_fedora_vm_image at launch (see playbook header)"

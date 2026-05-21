@@ -29,17 +29,28 @@
         cmd: >-
           gh repo list {{ aap_github_owner }}
           --limit {{ aap_github_repo_limit }}
-          --json name,url,isPrivate
+          --json name,url,isPrivate,defaultBranchRef
       register: aap_controller_gh_repos
       changed_when: false
 
-    - name: aap_controller | Keep public repos only
+    - name: aap_controller | Reset public repo list
       ansible.builtin.set_fact:
-        aap_github_repos: >-
+        aap_github_repos: []
+
+    - name: aap_controller | Keep public repos with default branch
+      ansible.builtin.set_fact:
+        aap_github_repos: "{{ aap_github_repos + [repo_entry] }}"
+      loop: "{{ aap_controller_gh_repos.stdout | from_json | rejectattr('isPrivate') | list }}"
+      vars:
+        repo_entry: >-
           {{
-            (aap_controller_gh_repos.stdout | from_json)
-            | rejectattr('isPrivate')
-            | list
+            item | combine({
+              'default_branch': (
+                item.defaultBranchRef.name
+                if item.defaultBranchRef is defined and item.defaultBranchRef
+                else aap_scm_branch
+              )
+            })
           }}
 
 - name: aap_controller | Require repo list

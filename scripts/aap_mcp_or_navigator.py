@@ -96,11 +96,27 @@ def shutil_which(name: str) -> str | None:
 
 def github_repos(owner: str, limit: int) -> list[dict]:
     out = subprocess.check_output(
-        ["gh", "repo", "list", owner, "--limit", str(limit), "--json", "name,url,isPrivate"],
+        [
+            "gh",
+            "repo",
+            "list",
+            owner,
+            "--limit",
+            str(limit),
+            "--json",
+            "name,url,isPrivate,defaultBranchRef",
+        ],
         text=True,
         cwd=REPO_ROOT,
     )
-    return [r for r in json.loads(out) if not r.get("isPrivate")]
+    repos = []
+    for r in json.loads(out):
+        if r.get("isPrivate"):
+            continue
+        ref = r.get("defaultBranchRef") or {}
+        r["default_branch"] = ref.get("name") or "main"
+        repos.append(r)
+    return repos
 
 
 def scm_url(url: str) -> str:
@@ -151,7 +167,7 @@ def mcp_sync_github_projects(client: McpClient, owner: str, org_id: int) -> int:
             "organization": org_id,
             "scm_type": "git",
             "scm_url": url,
-            "scm_branch": "main",
+            "scm_branch": repo.get("default_branch", "main"),
         }
         client.call_tool("projects_create", body)
         print(f"CREATE [{name}] {url} (MCP)")

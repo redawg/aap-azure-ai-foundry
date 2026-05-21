@@ -72,3 +72,7 @@ azure_location: eastus
 azure_fedora_name_prefix: aap-fedora-demo
 azure_fedora_vm_image: "FedoraLinux:fedora-41:41-gen2:latest"
 # azure_fedora_test_foundry_invoke: true
+
+# AAP job template (playbooks/aap-create-azure-fedora-template.yml)
+# aap_azure_fedora_inventory_id: 3
+# aap_azure_fedora_project_name: aap-azure-ai-foundry

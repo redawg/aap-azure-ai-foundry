@@ -1,0 +1,16 @@
+---
+# Loaded by playbooks/aap-create-azure-fedora-template.yml — not committed with secrets.
+aap_azure_fedora_default_extra_vars:
+  foundry_account: foundry-wg2cd-1
+  foundry_project: foundry-wg2cd-1-project
+  foundry_rg: openenv-wg2cd-1
+  foundry_sub: 9dc2c3d2-35a8-4370-8997-b56a57b5778d
+  foundry_agent_name: aap-automation-agent
+  azure_location: eastus
+  azure_fedora_deploy_rg: openenv-wg2cd-1
+  azure_fedora_name_prefix: aap-fedora-demo
+  azure_fedora_vm_image: "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:latest"
+  azure_fedora_deploy_vm: true
+  azure_fedora_deploy_alert_bridge: true
+  azure_fedora_deploy_monitor: true
+  azure_fedora_test_foundry_invoke: false

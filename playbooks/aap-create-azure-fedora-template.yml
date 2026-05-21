@@ -1,0 +1,17 @@
+---
+# Create or update Controller job template for playbooks/azure-fedora-alerts.yml
+#
+#   ansible-playbook playbooks/aap-create-azure-fedora-template.yml -e @group_vars/all.yml
+#   ./scripts/aap-create-azure-fedora-template.sh
+#
+- name: Create AAP job template for Azure Fedora alerts playbook
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - "{{ playbook_dir | dirname }}/config/azure_fedora_job_template_extra_vars.yml"
+  vars:
+    aap_controller_action: create-azure-fedora-job-template
+
+  roles:
+    - role: aap_controller

@@ -72,6 +72,7 @@ Workshop Foundry project endpoint (example):
 | [`playbooks/aap-create-project.yml`](playbooks/aap-create-project.yml) | Fallback: create one project (API) |
 | [`playbooks/install-local-tools.yml`](playbooks/install-local-tools.yml) | Install `oc` to `~/bin` |
 | [`playbooks/azure-fedora-alerts.yml`](playbooks/azure-fedora-alerts.yml) | Fedora VM on Azure + Monitor alerts → Foundry copilot agent |
+| [`playbooks/aap-create-azure-fedora-template.yml`](playbooks/aap-create-azure-fedora-template.yml) | Create AAP job template for `azure-fedora-alerts.yml` |
 
 ### Tags (`site.yml`)
 
@@ -117,6 +118,15 @@ ansible-playbook playbooks/azure-fedora-alerts.yml
 # optional end-to-end webhook test:
 ansible-playbook playbooks/azure-fedora-alerts.yml -e azure_fedora_test_foundry_invoke=true
 ```
+
+**AAP job template** (Controller UI launch):
+
+```bash
+ansible-playbook playbooks/aap-create-azure-fedora-template.yml -e @group_vars/all.yml
+# or: ./scripts/aap-create-azure-fedora-template.sh
+```
+
+Creates template **Azure VM + Foundry Alerts** on project `aap-azure-ai-foundry`, playbook `playbooks/azure-fedora-alerts.yml`, inventory `foundry-local` (localhost). Default extra vars: [`config/azure_fedora_job_template_extra_vars.yml`](config/azure_fedora_job_template_extra_vars.yml).
 
 Flow: **Metric alert** → **Action group webhook** → **Function `AlertToFoundry`** → **Foundry agent** (recommends AAP job template from alert JSON).
 

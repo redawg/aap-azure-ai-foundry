@@ -26,9 +26,11 @@
 - name: foundry_mcp_agent | Confirm MCP server responded to initialize
   ansible.builtin.assert:
     that:
+      - foundry_mcp_agent_probe.status == 200
       - >-
-        'serverInfo' in (foundry_mcp_agent_probe.content | default('')) or
-        'protocolVersion' in (foundry_mcp_agent_probe.content | default(''))
+        'serverInfo' in (foundry_mcp_agent_probe.content | default(''))
+        or '"name":"aap"' in (foundry_mcp_agent_probe.content | default(''))
+        or 'protocolVersion' in (foundry_mcp_agent_probe.content | default(''))
     fail_msg: >-
       MCP at {{ aap_mcp_server_url }} did not return a valid initialize response.
       Confirm aap_mcp_base_url and credentials, or run: ansible-playbook playbooks/site.yml --tags foundry_verify_mcp

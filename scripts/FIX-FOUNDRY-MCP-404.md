@@ -6,9 +6,20 @@ The MCP URL is correct. The server returns **HTTP 404** with JSON `"Session not 
 
 `initialize` can succeed with Basic auth; **tool enumeration requires Bearer**.
 
-## Wrong portal setup (causes 404)
+## Wrong portal setup (causes 404 or header errors)
 
 If the connection was created as **API key** with **Target URL** = the full MCP URL, Foundry may not send `Authorization: Bearer …` and tool discovery fails.
+
+### `Failed to add header 'Value:' with value 'Bearer …'`
+
+The **custom key name** was set to `Value` (or you pasted the playbook line `Value: Bearer …` into the name field). Foundry then sends an invalid HTTP header.
+
+| Field in portal | Correct | Wrong |
+|-----------------|---------|-------|
+| Key **name** | `Authorization` | `Value` |
+| Key **value** | `Bearer <gateway-token>` | only the token without `Bearer ` |
+
+Delete the bad row, add a new custom key with name **`Authorization`** and value **`Bearer <token>`**, then Save.
 
 ## Correct setup
 
