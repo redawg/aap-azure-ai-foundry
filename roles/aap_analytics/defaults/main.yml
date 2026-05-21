@@ -1,0 +1,12 @@
+---
+# AAP 2.6 on OpenShift — MetricsService + metrics-utility (see README / playbooks/provision-aap-analytics.yml)
+aap_analytics_namespace: "{{ ocp_namespace | default('aap') }}"
+aap_analytics_platform_cr: aap
+aap_analytics_controller_cr: aap-controller
+
+aap_analytics_enable_metrics_service: true
+aap_analytics_enable_metrics_utility: true
+aap_analytics_metrics_utility_console: false
+
+# Wait for MetricsService reconciliation (seconds, poll every 15s)
+aap_analytics_metrics_wait_timeout: 600

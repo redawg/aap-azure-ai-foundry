@@ -1,0 +1,136 @@
+---
+- name: aap_analytics | Require OpenShift CLI
+  ansible.builtin.command:
+    cmd: oc version --client
+  register: aap_analytics_oc_client
+  changed_when: false
+  failed_when: aap_analytics_oc_client.rc != 0
+
+- name: aap_analytics | Log in to OpenShift when token provided
+  ansible.builtin.command:
+    cmd: >-
+      oc login {{ ocp_api_url }} --token={{ ocp_token }}
+      --insecure-skip-tls-verify=true
+  register: aap_analytics_oc_login
+  changed_when: false
+  no_log: true
+  when: ocp_token is defined and ocp_token | length > 0
+
+- name: aap_analytics | Read AnsibleAutomationPlatform spec
+  ansible.builtin.command:
+    cmd: >-
+      oc get ansibleautomationplatform {{ aap_analytics_platform_cr }}
+      -n {{ aap_analytics_namespace }} -o json
+  register: aap_analytics_aap_cr
+  changed_when: false
+
+- name: aap_analytics | Parse platform CR
+  ansible.builtin.set_fact:
+    aap_analytics_aap_json: "{{ aap_analytics_aap_cr.stdout | from_json }}"
+
+- name: aap_analytics | Enable MetricsService on platform CR (AAP 2.6)
+  ansible.builtin.command:
+    cmd: >-
+      oc patch ansibleautomationplatform {{ aap_analytics_platform_cr }}
+      -n {{ aap_analytics_namespace }} --type=merge
+      -p '{"spec":{"metrics":{}}}'
+  register: aap_analytics_patch_metrics
+  changed_when: "'patched' in (aap_analytics_patch_metrics.stdout | default(''))"
+  when:
+    - aap_analytics_enable_metrics_service | bool
+    - (aap_analytics_aap_json.spec.metrics | default({}, true)) | length == 0
+
+- name: aap_analytics | MetricsService already configured
+  ansible.builtin.debug:
+    msg: "spec.metrics already set on {{ aap_analytics_platform_cr }}; skipping patch"
+  when:
+    - aap_analytics_enable_metrics_service | bool
+    - (aap_analytics_aap_json.spec.metrics | default({}, true)) | length > 0
+
+- name: aap_analytics | Read AutomationController spec
+  ansible.builtin.command:
+    cmd: >-
+      oc get automationcontroller {{ aap_analytics_controller_cr }}
+      -n {{ aap_analytics_namespace }} -o json
+  register: aap_analytics_controller_query
+  changed_when: false
+  when: aap_analytics_enable_metrics_utility | bool
+
+- name: aap_analytics | Parse controller CR
+  ansible.builtin.set_fact:
+    aap_analytics_controller_json: "{{ aap_analytics_controller_query.stdout | from_json }}"
+  when: aap_analytics_enable_metrics_utility | bool
+
+- name: aap_analytics | Enable metrics-utility on controller
+  ansible.builtin.command:
+    cmd: >-
+      oc patch automationcontroller {{ aap_analytics_controller_cr }}
+      -n {{ aap_analytics_namespace }} --type=merge
+      -p '{"spec":{"metrics_utility_enabled":true,"metrics_utility_console_enabled":{{ aap_analytics_metrics_utility_console | bool | lower }}}}'
+  register: aap_analytics_patch_utility
+  changed_when: "'patched' in (aap_analytics_patch_utility.stdout | default(''))"
+  when:
+    - aap_analytics_enable_metrics_utility | bool
+    - not (aap_analytics_controller_json.spec.metrics_utility_enabled | default(false) | bool)
+
+- name: aap_analytics | metrics-utility already enabled
+  ansible.builtin.debug:
+    msg: "metrics_utility_enabled already true on {{ aap_analytics_controller_cr }}"
+  when:
+    - aap_analytics_enable_metrics_utility | bool
+    - aap_analytics_controller_json.spec.metrics_utility_enabled | default(false) | bool
+
+- name: aap_analytics | Wait for MetricsService CR
+  ansible.builtin.command:
+    cmd: oc get metricsservice -n {{ aap_analytics_namespace }} -o name
+  register: aap_analytics_metricsservice
+  until: aap_analytics_metricsservice.stdout_lines | length > 0
+  retries: "{{ (aap_analytics_metrics_wait_timeout | int) // 15 }}"
+  delay: 15
+  changed_when: false
+  when: aap_analytics_enable_metrics_service | bool
+
+- name: aap_analytics | Wait for metrics-related pods
+  ansible.builtin.shell: |
+    set -euo pipefail
+    oc get pods -n {{ aap_analytics_namespace }} -o json | python3 -c "
+    import json,sys
+    data=json.load(sys.stdin)
+    names=[i['metadata']['name'] for i in data.get('items',[])]
+    hits=[n for n in names if 'metric' in n.lower()]
+    print('hits', len(hits))
+    sys.exit(0 if hits else 1)
+    "
+  register: aap_analytics_metric_pods
+  until: aap_analytics_metric_pods.rc == 0
+  retries: "{{ (aap_analytics_metrics_wait_timeout | int) // 15 }}"
+  delay: 15
+  changed_when: false
+  when: aap_analytics_enable_metrics_service | bool
+
+- name: aap_analytics | Collect status
+  ansible.builtin.shell: "{{ item }}"
+  loop:
+    - oc get metricsservice -n {{ aap_analytics_namespace }}
+    - oc get pods -n {{ aap_analytics_namespace }} | grep -i metric || true
+    - oc get routes -n {{ aap_analytics_namespace }} | grep -i metric || true
+    - >-
+      oc get automationcontroller {{ aap_analytics_controller_cr }}
+      -n {{ aap_analytics_namespace }}
+      -o jsonpath='metrics_utility_enabled={.spec.metrics_utility_enabled}{"\n"}'
+  register: aap_analytics_status
+  changed_when: false
+
+- name: aap_analytics | Show provisioning result
+  ansible.builtin.debug:
+    msg: "{{ item.stdout_lines | default([item.stdout]) }}"
+  loop: "{{ aap_analytics_status.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: aap_analytics | Automation Analytics (Hybrid Cloud Console)
+  ansible.builtin.debug:
+    msg:
+      - "Automation Analytics (usage/ROI in console.redhat.com) uses controller data collection to cloud.redhat.com."
+      - "After jobs run, open Hybrid Cloud Console → Ansible → Automation Analytics."
+      - "Ensure the cluster has a valid AAP subscription; controller already sets AUTOMATION_ANALYTICS_URL when entitled."

@@ -1,0 +1,22 @@
+---
+# Provision AAP 2.6 analytics components on the workshop OpenShift cluster.
+#
+#   ansible-playbook playbooks/provision-aap-analytics.yml
+#   ansible-playbook playbooks/provision-aap-analytics.yml -e ocp_token=sha256~...
+#
+# Enables:
+#   - spec.metrics on AnsibleAutomationPlatform (MetricsService operator)
+#   - metrics_utility_enabled on AutomationController (usage/CCSP reports)
+#
+# Automation Analytics in console.redhat.com is subscription-driven; see role debug output.
+#
+- name: Provision AAP analytics (2.6)
+  hosts: foundry
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir | dirname }}"
+
+  tasks:
+    - name: Provision analytics on cluster
+      ansible.builtin.include_role:
+        name: aap_analytics

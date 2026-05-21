@@ -36,9 +36,14 @@ foundry_extra_projects_to_delete:
   - wg2cd-mcp
   - wg2cd-project
 
-# OpenShift (playbooks/verify.yml, openshift-mcp-routes.yml)
+# OpenShift (playbooks/verify.yml, openshift-mcp-routes.yml, provision-aap-analytics.yml)
+ocp_namespace: aap
 # ocp_token: sha256~…
 ocp_api_url: https://api.cluster-wg2cd-2.dynamic2.redhatworkshops.io:6443
+
+# AAP 2.6 analytics (MetricsService + metrics-utility)
+# aap_analytics_enable_metrics_service: true
+# aap_analytics_enable_metrics_utility: true
 
 # Optional: set instead of `az account get-access-token`
 # foundry_agent_token: ""

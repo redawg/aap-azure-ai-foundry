@@ -33,6 +33,7 @@ Workshop Foundry project endpoint (example):
 | [`playbooks/launch-job-template.yml`](playbooks/launch-job-template.yml) | Launch template by ID |
 | [`playbooks/mcp-list-job-templates.yml`](playbooks/mcp-list-job-templates.yml) | Templates via MCP |
 | [`playbooks/openshift-mcp-routes.yml`](playbooks/openshift-mcp-routes.yml) | `oc` MCP CRs and routes |
+| [`playbooks/provision-aap-analytics.yml`](playbooks/provision-aap-analytics.yml) | AAP 2.6 MetricsService + controller metrics-utility on OpenShift |
 | [`playbooks/install-local-tools.yml`](playbooks/install-local-tools.yml) | Install `oc` to `~/bin` |
 | [`playbooks/azure-fedora-alerts.yml`](playbooks/azure-fedora-alerts.yml) | Fedora VM on Azure + Monitor alerts → Foundry copilot agent |
 
