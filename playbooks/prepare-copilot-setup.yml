@@ -11,6 +11,16 @@
     openapi_file: "../aap-mcp-openapi.yaml"
 
   tasks:
+    - name: Skip when connector mode disabled
+      ansible.builtin.meta: end_play
+      when: copilot_setup_mode | default('both') not in ['connector', 'both']
+
+    - name: Ensure OpenAPI is generated
+      ansible.builtin.include_role:
+        name: copilot_mcp
+        tasks_from: generate-openapi.yml
+      when: openapi_spec is not defined
+
     - name: Create output directory
       ansible.builtin.file:
         path: "{{ output_dir }}"
@@ -21,10 +31,12 @@
       ansible.builtin.slurp:
         path: "{{ openapi_file }}"
       register: openapi_content
+      when: openapi_spec is not defined
 
     - name: Parse OpenAPI spec
       ansible.builtin.set_fact:
         openapi_spec: "{{ openapi_content.content | b64decode | from_yaml }}"
+      when: openapi_spec is not defined
 
     - name: Generate Basic Auth token
       ansible.builtin.set_fact:
@@ -79,10 +91,10 @@
             • Parameter location: Header
 
           Definition Tab:
-            • Review the three operations:
-              - InvokeMCPJobManagement
-              - InvokeMCPInventoryManagement
-              - InvokeMCPSystemMonitoring
+            • Review operations (unified /mcp plus six toolsets):
+              - InvokeMCPUnified
+              - InvokeMCPJobManagement, InvokeMCPInventoryManagement, InvokeMCPSystemMonitoring
+              - InvokeMCPUserManagement, InvokeMCPSecurityCompliance, InvokeMCPPlatformConfiguration
 
           7. Click: Create connector (bottom right)
 
@@ -153,9 +165,13 @@
             Full Header: Basic {{ basic_auth_token }}
 
           Endpoints:
+            • /mcp (unified)
             • /job_management/mcp
             • /inventory_management/mcp
             • /system_monitoring/mcp
+            • /user_management/mcp
+            • /security_compliance/mcp
+            • /platform_configuration/mcp
 
           ═══════════════════════════════════════════════════════════════════════════════
           TROUBLESHOOTING

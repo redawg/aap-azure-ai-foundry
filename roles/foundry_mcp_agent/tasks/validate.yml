@@ -9,6 +9,7 @@
     fail_msg: >-
       Copy group_vars/all.yml.example to group_vars/all.yml and set
       foundry_project_endpoint, aap_password, and aap_mcp_base_url.
+      For Copilot Studio use playbooks/site.yml instead of foundry-site.yml.
 
 - name: foundry_mcp_agent | Ensure model is set when creating an agent
   when: foundry_register_agent | bool

@@ -1,17 +1,37 @@
 ---
 # Copy to group_vars/all.yml (or use ansible-vault) — do not commit secrets.
 
-# Ansible MCP server (already deployed on AAP — set your URL)
+# Ansible MCP server (already deployed on AAP)
 aap_mcp_base_url: https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
 aap_mcp_server_path: /mcp
 
-# AAP credentials for MCP (Basic auth; OAuth2 bearer tokens fail MCP validation)
+# AAP credentials for MCP (Basic auth; OAuth2 bearer tokens fail MCP validation on many deployments)
 aap_user: admin
 aap_password: ""
 
-# Azure AI Foundry (playbooks/site.yml)
-foundry_project_endpoint: ""  # https://<resource>.services.ai.azure.com/api/projects/<project>
-foundry_model_deployment_name: claude-sonnet-4-5  # must match your Foundry deployment name
+# Microsoft Copilot Studio (primary — playbooks/site.yml)
+copilot_setup_mode: both          # wizard | connector | both
+copilot_agent_name: aap-automation-copilot
+copilot_verify_mcp_before_setup: true
+connector_name: AAP-MCP-Connector
+connector_display_name: Ansible Automation Platform MCP
+auto_add_to_copilot: false
+# power_platform_environment: ""  # or set POWER_PLATFORM_ENV
+
+# AAP MCP toolsets (OpenAPI + verify probes)
+aap_mcp_toolsets:
+  - job_management
+  - inventory_management
+  - system_monitoring
+  - user_management
+  - security_compliance
+  - platform_configuration
+
+aap_validate_certs: false
+
+# --- Legacy: Azure AI Foundry (playbooks/foundry-site.yml only) ---
+foundry_project_endpoint: ""
+foundry_model_deployment_name: claude-sonnet-4-5
 foundry_mcp_connection_name: aap-mcp-bearer
 foundry_agent_name: aap-automation-agent
 foundry_mcp_server_label: ansible-aap
@@ -19,5 +39,3 @@ foundry_mcp_require_approval: always
 foundry_verify_mcp_before_register: true
 foundry_register_agent: true
 foundry_validate_certs: false
-# Optional: set instead of running `az account get-access-token`
-# foundry_agent_token: ""

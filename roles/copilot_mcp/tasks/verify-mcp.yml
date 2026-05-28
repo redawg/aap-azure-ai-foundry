@@ -1,0 +1,67 @@
+---
+- name: copilot_mcp | Probe unified MCP initialize endpoint
+  ansible.builtin.uri:
+    url: "{{ aap_mcp_server_url }}"
+    method: POST
+    validate_certs: "{{ aap_validate_certs }}"
+    headers:
+      Authorization: "{{ aap_mcp_auth_header }}"
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+    body_format: json
+    body:
+      jsonrpc: "2.0"
+      id: 1
+      method: initialize
+      params:
+        protocolVersion: "2024-11-05"
+        capabilities: {}
+        clientInfo:
+          name: ansible-copilot-register
+          version: "1.0"
+    status_code: 200
+  register: copilot_mcp_unified_probe
+  changed_when: false
+  failed_when: false
+
+- name: copilot_mcp | Probe each toolset MCP endpoint
+  ansible.builtin.uri:
+    url: "{{ aap_mcp_base_url }}/{{ item }}/mcp"
+    method: POST
+    validate_certs: "{{ aap_validate_certs }}"
+    headers:
+      Authorization: "{{ aap_mcp_auth_header }}"
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+    body_format: json
+    body:
+      jsonrpc: "2.0"
+      id: 1
+      method: initialize
+      params:
+        protocolVersion: "2024-11-05"
+        capabilities: {}
+        clientInfo:
+          name: ansible-copilot-register
+          version: "1.0"
+    status_code: 200
+  loop: "{{ aap_mcp_toolsets }}"
+  register: copilot_mcp_toolset_probes
+  changed_when: false
+  failed_when: false
+
+- name: copilot_mcp | Require at least one reachable MCP endpoint
+  ansible.builtin.assert:
+    that:
+      - >-
+        (copilot_mcp_unified_probe.status | default(0)) == 200 or
+        (copilot_mcp_toolset_probes.results | selectattr('status', 'defined') | selectattr('status', 'equalto', 200) | list | length) > 0
+    fail_msg: >-
+      No MCP endpoint responded to initialize at {{ aap_mcp_base_url }}.
+      Check URL, credentials, and TLS (aap_validate_certs).
+
+- name: copilot_mcp | Display MCP probe summary
+  ansible.builtin.debug:
+    msg:
+      - "Unified {{ aap_mcp_server_path }}: HTTP {{ copilot_mcp_unified_probe.status | default('failed') }}"
+      - "Toolset probes (200=ok): {{ copilot_mcp_toolset_probes.results | map(attribute='item') | zip(copilot_mcp_toolset_probes.results | map(attribute='status')) | list }}"

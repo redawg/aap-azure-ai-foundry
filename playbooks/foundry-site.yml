@@ -1,0 +1,26 @@
+---
+# Legacy: Register AAP MCP with Azure AI Foundry (optional).
+# Prefer playbooks/site.yml for Microsoft Copilot Studio.
+#
+#   ansible-playbook playbooks/foundry-site.yml
+
+- name: Configure Ansible MCP server in Azure AI Foundry
+  hosts: foundry
+  gather_facts: false
+
+  roles:
+    - role: foundry_mcp_agent
+      tags:
+        - foundry_mcp_agent
+
+  post_tasks:
+    - name: Summarize Foundry MCP registration
+      ansible.builtin.debug:
+        msg:
+          - "MCP server URL: {{ aap_mcp_server_url | default(aap_mcp_base_url ~ aap_mcp_server_path) }}"
+          - "Foundry connection: {{ foundry_mcp_connection_name }} (CustomKeys → Authorization: Basic …)"
+          - "Foundry agent: {{ foundry_agent_name }} (model: {{ foundry_model_deployment_name }})"
+          - "Test: https://ai.azure.com → your project → Playground → agent '{{ foundry_agent_name }}'"
+          - "Copilot Studio path: ansible-playbook playbooks/site.yml"
+      tags:
+        - foundry_mcp_agent

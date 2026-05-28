@@ -11,10 +11,7 @@
     power_platform_environment: "{{ lookup('env', 'POWER_PLATFORM_ENV') | default('', true) }}"
     power_platform_region: "{{ lookup('env', 'POWER_PLATFORM_REGION') | default('unitedstates', true) }}"
 
-    # Custom Connector settings
-    connector_name: "AAP-MCP-Connector"
-    connector_display_name: "Ansible Automation Platform MCP"
-    connector_description: "MCP server for managing Ansible Automation Platform"
+    # Custom Connector settings — defaults in roles/copilot_mcp/defaults/main.yml
     openapi_file: "../aap-mcp-openapi.yaml"
 
     # AAP MCP settings from group_vars
@@ -27,6 +24,16 @@
     auto_add_to_agent: "{{ auto_add_to_copilot | default(false) }}"
 
   tasks:
+    - name: Skip when connector automation disabled
+      ansible.builtin.meta: end_play
+      when: copilot_setup_mode | default('both') not in ['connector', 'both']
+
+    - name: Ensure OpenAPI is generated
+      ansible.builtin.include_role:
+        name: copilot_mcp
+        tasks_from: generate-openapi.yml
+      when: openapi_spec is not defined
+
     - name: Verify prerequisites
       block:
         - name: Check if OpenAPI file exists

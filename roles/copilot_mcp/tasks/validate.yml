@@ -1,0 +1,16 @@
+---
+- name: copilot_mcp | Ensure required variables are set
+  ansible.builtin.assert:
+    that:
+      - aap_mcp_base_url | length > 0
+      - aap_user | length > 0
+      - aap_password | length > 0
+    fail_msg: >-
+      Copy group_vars/all.yml.example to group_vars/all.yml and set
+      aap_mcp_base_url, aap_user, and aap_password.
+
+- name: copilot_mcp | Ensure copilot_setup_mode is valid
+  ansible.builtin.assert:
+    that:
+      - copilot_setup_mode in ['wizard', 'connector', 'both']
+    fail_msg: "copilot_setup_mode must be wizard, connector, or both."

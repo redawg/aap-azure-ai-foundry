@@ -1,0 +1,28 @@
+---
+- name: copilot_mcp | Validate configuration
+  ansible.builtin.include_tasks: validate.yml
+  tags:
+    - copilot_mcp
+    - copilot_validate
+
+- name: copilot_mcp | Build MCP Authorization header
+  ansible.builtin.set_fact:
+    aap_mcp_auth_header: "Basic {{ (aap_user ~ ':' ~ aap_password) | b64encode }}"
+    aap_mcp_server_url: "{{ aap_mcp_base_url }}{{ aap_mcp_server_path }}"
+    aap_mcp_host: "{{ aap_mcp_base_url | regex_replace('^https?://', '') | regex_replace('/.*$', '') }}"
+  no_log: true
+  tags:
+    - copilot_mcp
+
+- name: copilot_mcp | Verify MCP endpoints
+  ansible.builtin.include_tasks: verify-mcp.yml
+  when: copilot_verify_mcp_before_setup | default(true) | bool
+  tags:
+    - copilot_mcp
+    - verify_mcp
+
+- name: copilot_mcp | Generate OpenAPI specification
+  ansible.builtin.include_tasks: generate-openapi.yml
+  tags:
+    - copilot_mcp
+    - copilot_openapi

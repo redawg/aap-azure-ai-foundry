@@ -1,0 +1,15 @@
+---
+- name: copilot_mcp | Render OpenAPI specification for Copilot Studio
+  ansible.builtin.template:
+    src: aap-mcp-openapi.yaml.j2
+    dest: "{{ openapi_output_path }}"
+    mode: "0644"
+
+- name: copilot_mcp | Read generated OpenAPI
+  ansible.builtin.slurp:
+    path: "{{ openapi_output_path }}"
+  register: copilot_openapi_slurp
+
+- name: copilot_mcp | Parse OpenAPI for downstream tasks
+  ansible.builtin.set_fact:
+    openapi_spec: "{{ copilot_openapi_slurp.content | b64decode | from_yaml }}"

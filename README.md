@@ -1,87 +1,65 @@
-# Azure AI Foundry + Ansible MCP
+# AAP MCP + Microsoft Copilot Studio
 
-Register an **already-deployed** Ansible Automation Platform MCP server with:
-- [Azure AI Foundry Agent Service](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/model-context-protocol)
-- [Microsoft Copilot Studio](https://learn.microsoft.com/en-us/microsoft-copilot-studio/model-context-protocol)
+Register an **already-deployed** [Ansible Automation Platform MCP](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/containerized_installation/deploying-ansible-mcp-server) server with **Microsoft Copilot Studio** (primary).
 
-This repo does **not** install MCP on AAP. Set `aap_mcp_base_url` to your existing MCP route.
+**Legacy:** [Azure AI Foundry](docs/LEGACY-FOUNDRY.md) registration remains available via `playbooks/foundry-site.yml`.
 
-## Ansible
-
-See **[docs/RUNBOOK.md](docs/RUNBOOK.md)** for prerequisites, lab `creds.md` mapping, Azure login options, and troubleshooting.
+## Quick start (Copilot Studio)
 
 ```bash
-cd /Users/cferman/azure-aap-mcp
 cp group_vars/all.yml.example group_vars/all.yml
-# Edit: aap_mcp_base_url, aap_password, foundry_project_endpoint
+# Edit: aap_mcp_base_url, aap_user, aap_password
 
-az login
+./scripts/setup-copilot.sh
+# or:
 ansible-playbook playbooks/site.yml
 ```
+
+### Setup modes (`copilot_setup_mode`)
+
+| Mode | What runs |
+|------|-----------|
+| `wizard` | MCP health check + `copilot-setup-artifacts/MCP-SETUP-WIZARD.md` |
+| `connector` | OpenAPI + Power Platform custom connector artifacts/API |
+| `both` | Wizard + connector (default) |
 
 ### Tags
 
 | Tag | Action |
 |-----|--------|
-| `foundry_verify_mcp` | Probe MCP `/mcp` only |
-| `foundry_connection` | Foundry project connection only |
-| `foundry_agent` | Create agent with MCP tool |
-| `foundry_mcp_agent` | Full registration (default) |
+| `verify_mcp` | Probe unified `/mcp` and toolset endpoints |
+| `copilot_openapi` | Regenerate `aap-mcp-openapi.yaml` (6 toolsets + `/mcp`) |
+| `copilot_wizard` | MCP onboarding wizard guide |
+| `copilot_artifacts` | Manual custom connector artifacts |
+| `copilot_connector` | Power Platform API automation |
 
-Examples:
+## Prerequisites
 
-```bash
-# MCP health check only
-ansible-playbook playbooks/site.yml --tags foundry_verify_mcp
+- AAP MCP server URL and admin credentials (Basic auth)
+- [Copilot Studio](https://copilotstudio.microsoft.com) — **generative orchestration** enabled on your agent
+- Valid HTTPS certificate on MCP (required by Power Platform)
+- For connector automation: `az login` and Power Platform permissions
 
-# Connection only (no agent)
-ansible-playbook playbooks/site.yml -e foundry_register_agent=false --tags foundry_connection
+## Documentation
+
+| Doc | Purpose |
+|-----|---------|
+| [docs/RUNBOOK.md](docs/RUNBOOK.md) | Copilot Studio runbook |
+| [docs/COPILOT-STUDIO-SETUP.md](docs/COPILOT-STUDIO-SETUP.md) | UI setup (wizard + custom connector) |
+| [COPILOT-SETUP-QUICK-REF.md](COPILOT-SETUP-QUICK-REF.md) | Quick reference |
+| [playbooks/README-COPILOT-PLAYBOOKS.md](playbooks/README-COPILOT-PLAYBOOKS.md) | Playbook details |
+| [docs/LEGACY-FOUNDRY.md](docs/LEGACY-FOUNDRY.md) | Azure AI Foundry (optional) |
+
+## Architecture
+
+```
+AAP MCP (HTTPS, Basic auth)
+    ├── Copilot Studio MCP wizard (recommended)
+    └── Power Platform custom connector (OpenAPI, streamable MCP)
+            └── Copilot Studio agent tools
 ```
 
-## Copilot Studio (automated + manual)
-
-Integrate AAP MCP with Microsoft Copilot Studio using Power Platform Custom Connectors.
-
-### Quick Setup
-
-```bash
-./scripts/setup-copilot.sh
-```
-
-Interactive script with three options:
-1. **Full automation** - Uses Power Platform APIs (requires Azure CLI + login)
-2. **Generate artifacts** - Creates files for manual setup in Power Apps
-3. **Both** - Runs automation + generates artifacts as backup
-
-### Manual Playbook Execution
-
-```bash
-# Option 1: Automated (requires az login)
-ansible-playbook playbooks/setup-copilot-mcp.yml
-
-# Option 2: Generate artifacts for manual setup
-ansible-playbook playbooks/prepare-copilot-setup.yml
-cd copilot-setup-artifacts
-cat SETUP-INSTRUCTIONS.txt
-```
-
-### Documentation
-
-- **Setup Guide**: [docs/COPILOT-STUDIO-SETUP.md](docs/COPILOT-STUDIO-SETUP.md)
-- **Quick Reference**: [COPILOT-SETUP-QUICK-REF.md](COPILOT-SETUP-QUICK-REF.md)
-- **Playbook Docs**: [playbooks/README-COPILOT-PLAYBOOKS.md](playbooks/README-COPILOT-PLAYBOOKS.md)
-
-## Foundry portal (manual)
-
-1. [https://ai.azure.com](https://ai.azure.com) → **Connections** → **Custom keys** → `Authorization: Basic …`
-2. **Agents** → **MCP** → server URL `{{ aap_mcp_base_url }}/mcp`
-
-## Scripts (optional)
-
-```bash
-cp .env.example .env
-./scripts/configure-foundry-rest.sh
-```
+OpenAPI is generated from [`roles/copilot_mcp/templates/aap-mcp-openapi.yaml.j2`](roles/copilot_mcp/templates/aap-mcp-openapi.yaml.j2) aligned with [ansible-tmm/mcp-demo](https://github.com/ansible-tmm/mcp-demo/tree/main/copilotstudio-mcp-setup).
 
 ## Variables
 
@@ -93,5 +71,6 @@ Do not commit `creds.md`, `.env`, or `group_vars/all.yml`.
 
 ## References
 
-- [Connect agents to MCP servers (Foundry)](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/tools/model-context-protocol)
-- [MCP server authentication (Foundry)](https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/mcp-authentication)
+- [Copilot Studio — connect MCP server](https://learn.microsoft.com/en-us/microsoft-copilot-studio/mcp-add-existing-server-to-agent)
+- [Copilot Studio — extend agent with MCP](https://learn.microsoft.com/en-us/microsoft-copilot-studio/agent-extend-action-mcp)
+- [Red Hat AAP MCP server](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.6/html/containerized_installation/deploying-ansible-mcp-server)

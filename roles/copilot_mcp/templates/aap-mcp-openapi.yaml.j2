@@ -1,0 +1,37 @@
+swagger: '2.0'
+info:
+  title: Ansible Automation Platform MCP
+  description: >-
+    MCP streamable HTTP endpoints for Ansible Automation Platform toolsets.
+    Generated for Microsoft Copilot Studio (x-ms-agentic-protocol mcp-streamable-1.0).
+  version: 1.0.0
+host: {{ aap_mcp_host }}
+basePath: /
+schemes:
+  - https
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+security:
+  - Bearer: []
+paths:
+  /mcp:
+    post:
+      summary: Ansible Automation Platform unified MCP server
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCPUnified
+      responses:
+        '200':
+          description: Success
+{% for toolset in aap_mcp_toolsets %}
+  /{{ toolset }}/mcp:
+    post:
+      summary: Ansible Automation Platform {{ toolset | replace('_', ' ') | title }} MCP server
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCP{{ toolset | replace('_', ' ') | title | regex_replace(' ', '') }}
+      responses:
+        '200':
+          description: Success
+{% endfor %}

@@ -1,0 +1,45 @@
+---
+# Generate MCP onboarding wizard instructions for Copilot Studio (recommended path).
+- name: Prepare Copilot Studio MCP wizard guide
+  hosts: localhost
+  gather_facts: true
+  vars_files:
+    - ../group_vars/all.yml
+  vars:
+    output_dir: "../copilot-setup-artifacts"
+
+  tasks:
+    - name: Skip when wizard mode disabled
+      ansible.builtin.meta: end_play
+      when: copilot_setup_mode | default('both') not in ['wizard', 'both']
+
+    - name: Ensure copilot_mcp facts are available
+      ansible.builtin.include_role:
+        name: copilot_mcp
+      when: aap_mcp_auth_header is not defined
+      tags:
+        - copilot_wizard
+
+    - name: Create output directory
+      ansible.builtin.file:
+        path: "{{ output_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Generate Basic Auth token
+      ansible.builtin.set_fact:
+        basic_auth_token: "{{ (aap_user + ':' + aap_password) | b64encode }}"
+      no_log: true
+
+    - name: Write MCP wizard setup guide
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../roles/copilot_mcp/templates/MCP-SETUP-WIZARD.md.j2"
+        dest: "{{ output_dir }}/MCP-SETUP-WIZARD.md"
+        mode: "0644"
+
+    - name: Wizard guide created
+      ansible.builtin.debug:
+        msg:
+          - "MCP wizard guide: {{ output_dir }}/MCP-SETUP-WIZARD.md"
+          - "Copilot Studio → your agent → Tools → Add tool → MCP (streamable HTTP)"
+          - "Use Authorization: Basic {{ basic_auth_token }} (include 'Basic ' prefix in connector UI)"

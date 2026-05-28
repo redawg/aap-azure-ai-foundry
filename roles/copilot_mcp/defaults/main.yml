@@ -1,0 +1,29 @@
+---
+# Shared AAP MCP (Copilot Studio + legacy Foundry)
+aap_user: admin
+aap_password: ""
+aap_mcp_base_url: https://aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
+aap_mcp_server_path: /mcp
+aap_validate_certs: false
+
+# AAP MCP toolsets (six endpoints per ansible-tmm/mcp-demo)
+aap_mcp_toolsets:
+  - job_management
+  - inventory_management
+  - system_monitoring
+  - user_management
+  - security_compliance
+  - platform_configuration
+
+# Copilot Studio
+copilot_setup_mode: both  # wizard | connector | both
+copilot_agent_name: aap-automation-copilot
+connector_name: AAP-MCP-Connector
+connector_display_name: Ansible Automation Platform MCP
+connector_description: MCP server for managing Ansible Automation Platform
+openapi_output_path: "{{ playbook_dir }}/../aap-mcp-openapi.yaml"
+auto_add_to_copilot: false
+
+# Power Platform (optional; for setup-copilot-mcp.yml)
+power_platform_environment: ""
+power_platform_region: unitedstates

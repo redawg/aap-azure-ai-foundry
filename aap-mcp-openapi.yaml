@@ -1,7 +1,9 @@
 swagger: '2.0'
 info:
-  title: Ansible Automation Platform MCP - Job Management
-  description: MCP server for managing Ansible Automation Platform jobs and job templates
+  title: Ansible Automation Platform MCP
+  description: >-
+    MCP streamable HTTP endpoints for Ansible Automation Platform toolsets.
+    Generated for Microsoft Copilot Studio (x-ms-agentic-protocol mcp-streamable-1.0).
   version: 1.0.0
 host: aap-mcp-aap.apps.cluster-wg2cd-2.dynamic2.redhatworkshops.io
 basePath: /
@@ -15,9 +17,17 @@ securityDefinitions:
 security:
   - Bearer: []
 paths:
+  /mcp:
+    post:
+      summary: Ansible Automation Platform unified MCP server
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCPUnified
+      responses:
+        '200':
+          description: Success
   /job_management/mcp:
     post:
-      summary: Ansible Automation Platform Job Management Server
+      summary: Ansible Automation Platform Job Management MCP server
       x-ms-agentic-protocol: mcp-streamable-1.0
       operationId: InvokeMCPJobManagement
       responses:
@@ -25,7 +35,7 @@ paths:
           description: Success
   /inventory_management/mcp:
     post:
-      summary: Ansible Automation Platform Inventory Management Server
+      summary: Ansible Automation Platform Inventory Management MCP server
       x-ms-agentic-protocol: mcp-streamable-1.0
       operationId: InvokeMCPInventoryManagement
       responses:
@@ -33,9 +43,33 @@ paths:
           description: Success
   /system_monitoring/mcp:
     post:
-      summary: Ansible Automation Platform System Monitoring Server
+      summary: Ansible Automation Platform System Monitoring MCP server
       x-ms-agentic-protocol: mcp-streamable-1.0
       operationId: InvokeMCPSystemMonitoring
+      responses:
+        '200':
+          description: Success
+  /user_management/mcp:
+    post:
+      summary: Ansible Automation Platform User Management MCP server
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCPUserManagement
+      responses:
+        '200':
+          description: Success
+  /security_compliance/mcp:
+    post:
+      summary: Ansible Automation Platform Security Compliance MCP server
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCPSecurityCompliance
+      responses:
+        '200':
+          description: Success
+  /platform_configuration/mcp:
+    post:
+      summary: Ansible Automation Platform Platform Configuration MCP server
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCPPlatformConfiguration
       responses:
         '200':
           description: Success

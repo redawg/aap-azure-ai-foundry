@@ -1,0 +1,67 @@
+# AAP MCP → Copilot Studio (MCP wizard)
+
+Generated: {{ ansible_date_time.iso8601 }}
+
+Use the **native MCP onboarding wizard** in Copilot Studio (recommended). Custom OpenAPI connectors are optional for DLP or multi-tenant publish scenarios.
+
+## Prerequisites
+
+- [Microsoft Copilot Studio](https://copilotstudio.microsoft.com) access
+- **Generative orchestration** enabled on your agent ([docs](https://learn.microsoft.com/en-us/microsoft-copilot-studio/agent-extend-action-mcp))
+- AAP MCP reachable over **HTTPS** with a valid certificate (no self-signed)
+- Streamable HTTP transport ([docs](https://learn.microsoft.com/en-us/microsoft-copilot-studio/mcp-add-existing-server-to-agent))
+
+## Authentication
+
+| Field | Value |
+|-------|--------|
+| Type | Basic (API key in `Authorization` header) |
+| Header | `Authorization` |
+| Value | `Basic {{ basic_auth_token }}` |
+
+⚠️ Include the `Basic ` prefix and a single space before the Base64 token.
+
+## MCP server URLs
+
+Register each toolset your deployment exposes (or the unified endpoint if supported):
+
+| Toolset | URL |
+|---------|-----|
+| Unified | `{{ aap_mcp_base_url }}{{ aap_mcp_server_path }}` |
+{% for toolset in aap_mcp_toolsets %}
+| {{ toolset | replace('_', ' ') | title }} | `{{ aap_mcp_base_url }}/{{ toolset }}/mcp` |
+{% endfor %}
+
+## Steps (Copilot Studio UI)
+
+1. Open [Copilot Studio](https://copilotstudio.microsoft.com) → your agent (**{{ copilot_agent_name }}**).
+2. Confirm **Generative orchestration** is on (Settings).
+3. Go to **Tools** → **Add a tool** → **MCP** (or use the MCP onboarding wizard).
+4. Enter the MCP server URL (start with unified `{{ aap_mcp_server_path }}` or a toolset URL from the table above).
+5. Configure authentication with the Basic header value above.
+6. Save and test a prompt, e.g. *"List available Ansible job templates."*
+
+## Verify from your workstation
+
+```bash
+curl -sk -X POST '{{ aap_mcp_base_url }}{{ aap_mcp_server_path }}' \
+  -H 'Authorization: Basic {{ basic_auth_token }}' \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}'
+```
+
+## Custom connector (optional)
+
+If your tenant requires Power Platform connectors (DLP, published connector):
+
+```bash
+ansible-playbook playbooks/prepare-copilot-setup.yml --tags copilot_artifacts
+```
+
+See `SETUP-INSTRUCTIONS.txt` in `copilot-setup-artifacts/`.
+
+## References
+
+- [Connect an existing MCP server](https://learn.microsoft.com/en-us/microsoft-copilot-studio/mcp-add-existing-server-to-agent)
+- [Extend agents with MCP](https://learn.microsoft.com/en-us/microsoft-copilot-studio/agent-extend-action-mcp)
+- [ansible-tmm/mcp-demo — copilotstudio-mcp-setup](https://github.com/ansible-tmm/mcp-demo/tree/main/copilotstudio-mcp-setup)
